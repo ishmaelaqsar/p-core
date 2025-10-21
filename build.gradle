@@ -1,0 +1,23 @@
+ext {
+    javaVersion = 17
+    jakartaAnnotationApiVersion = '3.0.0'
+    ST4Version = '4.3.4'
+    jmhVersion = '1.37'
+    agronaVersion = '2.3.0'
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    group = 'dev.aqsar'
+    version = '1.0-SNAPSHOT'
+
+    java {
+        sourceCompatibility = JavaVersion.toVersion(javaVersion)
+        targetCompatibility = JavaVersion.toVersion(javaVersion)
+    }
+
+    repositories {
+        mavenCentral()
+    }
+}

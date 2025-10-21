@@ -1,0 +1,15 @@
+plugins {
+    id 'java'
+}
+
+dependencies {
+    implementation "jakarta.annotation:jakarta.annotation-api:${jakartaAnnotationApiVersion}"
+    implementation project(':p-core-codegen')
+    implementation "org.agrona:agrona:${agronaVersion}"
+}
+
+sourceSets.main.java.srcDir(project(':p-core-codegen').layout.buildDirectory.dir('generated-sources/java'))
+
+tasks.named('compileJava') {
+    dependsOn project(':p-core-codegen').tasks.named('generatePrimitiveLists')
+}

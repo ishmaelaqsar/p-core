@@ -1,0 +1,10 @@
+rootProject.name = 'p-core-parent'
+
+include ':p-core-codegen'
+include ':p-core'
+include ':p-core-benchmarks'
+
+// Map Gradle projects to actual directories
+project(':p-core-codegen').projectDir = file("$rootDir/codegen")
+project(':p-core').projectDir = file("$rootDir/p-core")
+project(':p-core-benchmarks').projectDir = file("$rootDir/benchmarks")
