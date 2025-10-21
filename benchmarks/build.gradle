@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+    id 'me.champeau.jmh' version '0.7.3'
+}
+
+dependencies {
+    implementation project(':p-core')
+    implementation "org.agrona:agrona:${agronaVersion}"
+
+    implementation "org.openjdk.jmh:jmh-core:${jmhVersion}"
+    annotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:${jmhVersion}"
+}
+
+// Ensure benchmarks compile after codegen
+tasks.named('compileJava') {
+    dependsOn project(':p-core-codegen').tasks.named('generatePrimitiveLists')
+}
+
+jmh {
+    sourceSets.addAll([sourceSets.main])
+    verbosity = 'NORMAL' // Verbosity mode. Available modes are: [SILENT, NORMAL, EXTRA]
+}
+
+// Optional: configure the JAR task
+tasks.named('jar', Jar) {
+    archiveFileName.set('p-core-benchmarks.jar')
+}

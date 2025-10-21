@@ -1,0 +1,40 @@
+plugins {
+    id 'java'
+}
+
+dependencies {
+    implementation "org.antlr:ST4:${ST4Version}"
+}
+
+def generatedSourcesDir = project(':p-core').layout.buildDirectory.dir('generated-sources/java').get().asFile
+
+tasks.register('generatePrimitiveLists', JavaExec) {
+    group = 'build'
+    description = 'Generates primitive list classes for p-core.'
+
+    dependsOn tasks.named('compileJava')
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'dev.aqsar.pcore.generator.PrimitiveListGenerator'
+
+    args = [
+            generatedSourcesDir.absolutePath,
+            "$projectDir/src/main/templates/PrimitiveList.st"
+    ]
+
+    outputs.dir(generatedSourcesDir)
+
+    doFirst {
+        if (generatedSourcesDir.exists()) {
+            generatedSourcesDir.deleteDir()
+        }
+        generatedSourcesDir.mkdirs()
+    }
+}
+
+
+// Make the :p-core compilation depend on generated sources
+project(':p-core').sourceSets.main.java.srcDir(generatedSourcesDir)
+project(':p-core').tasks.named('compileJava').configure {
+    dependsOn tasks.named('generatePrimitiveLists')
+}
