@@ -8,14 +8,14 @@ dependencies {
 
 def generatedSourcesDir = project(':p-core').layout.buildDirectory.dir('generated-sources/java').get().asFile
 
-tasks.register('generatePrimitiveLists', JavaExec) {
+tasks.register('generateLists', JavaExec) {
     group = 'build'
     description = 'Generates primitive list classes for p-core.'
 
     dependsOn tasks.named('compileJava')
 
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'dev.aqsar.pcore.generator.PrimitiveListGenerator'
+    mainClass = 'dev.aqsar.pcore.generator.ListGenerator'
 
     args = [generatedSourcesDir.absolutePath]
 
@@ -28,14 +28,14 @@ tasks.register('generatePrimitiveLists', JavaExec) {
     }
 }
 
-tasks.register('generatePrimitive2PrimitiveHashMaps', JavaExec) {
+tasks.register('generateHashMaps', JavaExec) {
     group = 'build'
-    description = 'Generates primitive to primitive hashmap classes for p-core.'
+    description = 'Generates primitive hashmap classes for p-core.'
 
     dependsOn tasks.named('compileJava')
 
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'dev.aqsar.pcore.generator.Primitive2PrimitiveHashMapGenerator'
+    mainClass = 'dev.aqsar.pcore.generator.HashMapGenerator'
 
     args = [generatedSourcesDir.absolutePath]
 
@@ -51,6 +51,6 @@ tasks.register('generatePrimitive2PrimitiveHashMaps', JavaExec) {
 // Make the :p-core compilation depend on generated sources
 project(':p-core').sourceSets.main.java.srcDir(generatedSourcesDir)
 project(':p-core').tasks.named('compileJava').configure {
-    dependsOn tasks.named('generatePrimitiveLists')
-    dependsOn tasks.named('generatePrimitive2PrimitiveHashMaps')
+    dependsOn tasks.named('generateLists')
+    dependsOn tasks.named('generateHashMaps')
 }

@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-public class PrimitiveListGenerator {
+public class ListGenerator {
 
     private static final List<PrimitiveType> TYPES =
             List.of(new PrimitiveType("int", "Integer", "Int", "Integer.MIN_VALUE"),

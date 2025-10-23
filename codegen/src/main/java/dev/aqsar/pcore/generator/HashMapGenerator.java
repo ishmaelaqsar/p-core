@@ -8,56 +8,62 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-public class Primitive2PrimitiveHashMapGenerator {
+public class HashMapGenerator {
 
-    private static final List<PrimitiveType> TYPES = List.of(
-            // Integer types - use sentinel values
-            new IntegerType("int", "Integer", "Int", "Integer.MIN_VALUE"),
-            new IntegerType("long", "Long", "Long", "Long.MIN_VALUE"),
-
-            // Floating point types - use state array
-            new FloatingType("float", "Float", "Float", "Float.NaN"),
-            new FloatingType("double", "Double", "Double", "Double.NaN"));
+    private static final List<PrimitiveType> TYPES =
+            List.of(new IntegerType("int", "Integer", "Int", "Integer.MIN_VALUE"),
+                    new IntegerType("long", "Long", "Long", "Long.MIN_VALUE"),
+                    new FloatingType("float", "Float", "Float", "Float.MIN_VALUE"),
+                    new FloatingType("double", "Double", "Double", "Double.MIN_VALUE"));
 
     public static void main(final String[] args) throws IOException {
         if (args.length < 1) {
-            System.err.println("Usage: Primitive2PrimitiveHashMapGenerator <output-dir>");
+            System.err.println("Usage: HashMapGenerator <output-dir>");
             System.exit(1);
         }
 
         final Path outputDir = Paths.get(args[0]);
-        final Path templatePath = Paths.get("src/main/templates/Primitive2PrimitiveHashMap.st");
-        final String templateContent = Files.readString(templatePath);
-
+        final Path templateDir = Paths.get("src/main/templates");
         final Path packageDir = outputDir.resolve("dev/aqsar/pcore/collections");
         Files.createDirectories(packageDir);
 
-        // Generate all key-value combinations
+        // Generate Primitive2Primitive maps
+        final String primitive2PrimitiveTemplate =
+                Files.readString(templateDir.resolve("Primitive2PrimitiveHashMap.st"));
         for (final PrimitiveType keyType : TYPES) {
             for (final PrimitiveType valueType : TYPES) {
-                generateHashMap(templateContent, packageDir, keyType, valueType);
+                generatePrimitive2Primitive(primitive2PrimitiveTemplate, packageDir, keyType, valueType);
             }
+        }
+
+        // Generate Primitive2Object maps
+        final String primitive2ObjectTemplate = Files.readString(templateDir.resolve("Primitive2ObjectHashMap.st"));
+        for (final PrimitiveType keyType : TYPES) {
+            generatePrimitive2Object(primitive2ObjectTemplate, packageDir, keyType);
+        }
+
+        // Generate Object2Primitive maps
+        final String object2PrimitiveTemplate = Files.readString(templateDir.resolve("Object2PrimitiveHashMap.st"));
+        for (final PrimitiveType valueType : TYPES) {
+            generateObject2Primitive(object2PrimitiveTemplate, packageDir, valueType);
         }
     }
 
-    private static void generateHashMap(final String templateContent,
-                                        final Path packageDir,
-                                        final PrimitiveType keyType,
-                                        final PrimitiveType valueType) throws IOException {
+    private static void generatePrimitive2Primitive(final String templateContent,
+                                                    final Path packageDir,
+                                                    final PrimitiveType keyType,
+                                                    final PrimitiveType valueType) throws IOException {
         final ST st = new ST(templateContent, '#', '#');
 
-        // Key type parameters
         st.add("primitiveKey", keyType.primitive);
         st.add("boxedKey", keyType.boxed);
         st.add("upperKey", keyType.upper);
 
-        // Value type parameters
         st.add("primitiveValue", valueType.primitive);
         st.add("boxedValue", valueType.boxed);
         st.add("upperValue", valueType.upper);
         st.add("nullValue", valueType.nullValue);
 
-        // Key-specific implementations
         st.add("sentinel_declarations", keyType.getSentinelDeclarations());
         st.add("state_array_declaration", keyType.getStateArrayDeclaration());
         st.add("state_array_init", keyType.getStateArrayInit());
@@ -74,14 +80,58 @@ public class Primitive2PrimitiveHashMapGenerator {
         st.add("state_array_init_resize", keyType.getStateArrayInitResize());
         st.add("was_occupied", keyType.wasOccupied());
 
-        // Value-specific implementations
         st.add("value_equals", valueType.getEqualsExpression());
 
-        // Add suffix to avoid name collision when key and value types are the same
-        String valueSuffix = keyType.upper.equals(valueType.upper) ? "Value" : "";
-        st.add("value_suffix", valueSuffix);
-
         final String className = keyType.upper + "2" + valueType.upper + "HashMap.java";
+        final Path classFile = packageDir.resolve(className);
+        Files.writeString(classFile, st.render());
+        System.out.printf("✅ Generated %s%n", classFile);
+    }
+
+    private static void generatePrimitive2Object(final String templateContent,
+                                                 final Path packageDir,
+                                                 final PrimitiveType keyType) throws IOException {
+        final ST st = new ST(templateContent, '#', '#');
+
+        st.add("primitiveKey", keyType.primitive);
+        st.add("boxedKey", keyType.boxed);
+        st.add("upperKey", keyType.upper);
+
+        st.add("sentinel_declarations", keyType.getSentinelDeclarations());
+        st.add("state_array_declaration", keyType.getStateArrayDeclaration());
+        st.add("state_array_init", keyType.getStateArrayInit());
+        st.add("clear_state", keyType.getClearState());
+        st.add("key_equals", keyType.getEqualsExpression());
+        st.add("key_null", keyType.getNullKeyExpression());
+        st.add("is_empty", keyType.isEmpty());
+        st.add("is_occupied", keyType.isOccupied());
+        st.add("is_empty_or_tombstone", keyType.isEmptyOrTombstone());
+        st.add("mark_occupied", keyType.markOccupied());
+        st.add("mark_tombstone", keyType.markTombstone());
+        st.add("hash_implementation", keyType.getHashImplementation());
+        st.add("save_old_state", keyType.getSaveOldState());
+        st.add("state_array_init_resize", keyType.getStateArrayInitResize());
+        st.add("was_occupied", keyType.wasOccupied());
+
+        final String className = keyType.upper + "2ObjectHashMap.java";
+        final Path classFile = packageDir.resolve(className);
+        Files.writeString(classFile, st.render());
+        System.out.printf("✅ Generated %s%n", classFile);
+    }
+
+    private static void generateObject2Primitive(final String templateContent,
+                                                 final Path packageDir,
+                                                 final PrimitiveType valueType) throws IOException {
+        final ST st = new ST(templateContent, '#', '#');
+
+        st.add("primitiveValue", valueType.primitive);
+        st.add("boxedValue", valueType.boxed);
+        st.add("upperValue", valueType.upper);
+        st.add("nullValue", valueType.nullValue);
+
+        st.add("value_equals", valueType.getEqualsExpression());
+
+        final String className = "Object2" + valueType.upper + "HashMap.java";
         final Path classFile = packageDir.resolve(className);
         Files.writeString(classFile, st.render());
         System.out.printf("✅ Generated %s%n", classFile);
@@ -138,7 +188,7 @@ public class Primitive2PrimitiveHashMapGenerator {
 
         IntegerType(String primitive, String boxed, String upper, String nullValue) {
             super(primitive, boxed, upper, nullValue);
-            this.sentinelKey = nullValue; // reuse nullValue for empty/tombstone
+            this.sentinelKey = nullValue;
         }
 
         @Override
@@ -150,7 +200,7 @@ public class Primitive2PrimitiveHashMapGenerator {
 
         @Override
         String getStateArrayDeclaration() {
-            return "// N/A"; // No state array needed for integers
+            return "// N/A";
         }
 
         @Override
@@ -165,7 +215,7 @@ public class Primitive2PrimitiveHashMapGenerator {
 
         @Override
         String getEqualsExpression() {
-            return "v1 == v2";
+            return "return v1 == v2;";
         }
 
         @Override
@@ -202,7 +252,7 @@ public class Primitive2PrimitiveHashMapGenerator {
                        return h;""";
             } else if (primitive.equals("long")) {
                 return """
-                       int h = (int)(key ^ (key >>> 32));
+                       int h = Long.hashCode(key);
                        h ^= (h >>> 16);
                        return h;""";
             }
@@ -211,7 +261,7 @@ public class Primitive2PrimitiveHashMapGenerator {
 
         @Override
         String getSaveOldState() {
-            return ""; // No state array to save
+            return "";
         }
 
         @Override
@@ -265,9 +315,15 @@ public class Primitive2PrimitiveHashMapGenerator {
         @Override
         String getEqualsExpression() {
             if (primitive.equals("double")) {
-                return "Double.doubleToLongBits(v1) == Double.doubleToLongBits(v2)";
-            } else { // float
-                return "Float.floatToIntBits(v1) == Float.floatToIntBits(v2)";
+                return """
+                       final double d1 = (v1 == 0.0) ? 0.0 : v1;
+                       final double d2 = (v2 == 0.0) ? 0.0 : v2;
+                       return Double.doubleToLongBits(d1) == Double.doubleToLongBits(d2);""";
+            } else {
+                return """
+                       final float f1 = (v1 == 0.0f) ? 0.0f : v1;
+                       final float f2 = (v2 == 0.0f) ? 0.0f : v2;
+                       return Float.floatToIntBits(f1) == Float.floatToIntBits(f2);""";
             }
         }
 
@@ -300,16 +356,14 @@ public class Primitive2PrimitiveHashMapGenerator {
         String getHashImplementation() {
             if (primitive.equals("double")) {
                 return """
-                       // Normalize NaN to single representation for consistent hashing
-                       long bits = Double.doubleToLongBits(key);
-                       int h = (int)(bits ^ (bits >>> 32));
+                       final double k = (key == 0.0) ? 0.0 : key;
+                       int h = Double.hashCode(k);
                        h ^= (h >>> 16);
                        return h;""";
-            } else { // float
+            } else {
                 return """
-                       // Normalize NaN to single representation for consistent hashing
-                       int bits = Float.floatToIntBits(key);
-                       int h = bits;
+                       final float k = (key == 0.0f) ? 0.0f : key;
+                       int h = Float.floatToIntBits(k);
                        h ^= (h >>> 16);
                        return h;""";
             }

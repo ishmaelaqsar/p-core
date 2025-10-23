@@ -403,11 +403,11 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
     }
 
     private boolean isKeyEqual(final #primitiveKey# v1, final #primitiveKey# v2) {
-        return #key_equals#;
+        #key_equals#
     }
 
     private boolean isValueEqual(final #primitiveValue# v1, final #primitiveValue# v2) {
-        return #value_equals#;
+        #value_equals#
     }
 
     private boolean isSlotEmpty(final int slot) {
@@ -701,16 +701,19 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
     }
 
     public final class #upperKey##upperValue#HashMapIterator implements AutoCloseable {
-        // Pad to avoid false sharing between pooled iterators
+        // Pad to avoid false sharing between pooled iterators (56 bytes = 7 longs)
         private long p0, p1, p2, p3, p4, p5, p6;
 
+        // Hot fields accessed every iteration (20 bytes = 5 ints)
         private final int poolIndex;
         private int cursor;
+        private int nextOccupiedSlot; // Pre-computed next occupied slot (-1 if none)
         private int expectedModCount;
-        private int lastReturnedIndex = -1;
+        private int lastReturnedIndex;
 
-        // More padding to ensure this iterator doesn't share cache lines
-        private long p8, p9, p10, p11, p12, p13, p14;
+        // Trailing padding to complete cache line (44 bytes to reach 128 bytes total)
+        // This ensures false sharing protection for pooled iterators
+        private long p8, p9, p10, p11, p12;
 
         private #upperKey##upperValue#HashMapIterator(final int poolIndex) {
             this.poolIndex = poolIndex;
@@ -719,91 +722,71 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
 
         void reset() {
             this.cursor = 0;
+            this.nextOccupiedSlot = -1;
             this.expectedModCount = modCount;
             this.lastReturnedIndex = -1;
+            advanceToNextOccupied();
         }
 
-        /**
-         * Returns true if there are more occupied slots to iterate.
-         */
-        public boolean hasNext() {
-            int i = cursor;
-            while (i < keys.length) {
-                if (isSlotOccupied(i)) {
-                    return true;
+        private void advanceToNextOccupied() {
+            while (cursor < keys.length) {
+                if (isSlotOccupied(cursor)) {
+                    nextOccupiedSlot = cursor;
+                    return;
                 }
-                i++;
+                cursor++;
             }
-            return false;
+            nextOccupiedSlot = -1;
         }
 
-        /**
-         * Advances and returns the next key.
-         */
+        public boolean hasNext() {
+            return nextOccupiedSlot >= 0;
+        }
+
         public #primitiveKey# nextKey() {
             if (expectedModCount != modCount) {
                 throw new ConcurrentModificationException();
             }
-
-            while (cursor < keys.length) {
-                if (isSlotOccupied(cursor)) {
-                    lastReturnedIndex = cursor;
-                    return keys[cursor++];
-                }
-                cursor++;
+            if (nextOccupiedSlot < 0) {
+                throw new NoSuchElementException();
             }
-            throw new NoSuchElementException();
+
+            lastReturnedIndex = nextOccupiedSlot;
+            final #primitiveKey# key = keys[nextOccupiedSlot];
+            cursor = nextOccupiedSlot + 1;
+            advanceToNextOccupied();
+            return key;
         }
 
-        /**
-         * Advances and returns the next value.
-         */
         public #primitiveValue# nextValue() {
             if (expectedModCount != modCount) {
                 throw new ConcurrentModificationException();
             }
-
-            while (cursor < keys.length) {
-                if (isSlotOccupied(cursor)) {
-                    lastReturnedIndex = cursor;
-                    return values[cursor++];
-                }
-                cursor++;
+            if (nextOccupiedSlot < 0) {
+                throw new NoSuchElementException();
             }
-            throw new NoSuchElementException();
+
+            lastReturnedIndex = nextOccupiedSlot;
+            final #primitiveValue# value = values[nextOccupiedSlot];
+            cursor = nextOccupiedSlot + 1;
+            advanceToNextOccupied();
+            return value;
         }
 
-        /**
-         * Peeks the next key without advancing.
-         */
         public #primitiveKey# peekNextKey() {
-            int i = cursor;
-            while (i < keys.length) {
-                if (isSlotOccupied(i)) {
-                    return keys[i];
-                }
-                i++;
+            if (nextOccupiedSlot < 0) {
+                throw new NoSuchElementException();
             }
-            throw new NoSuchElementException();
+            return keys[nextOccupiedSlot];
         }
 
-        /**
-         * Peeks the next value without advancing.
-         */
         public #primitiveValue# peekNextValue() {
-            int i = cursor;
-            while (i < keys.length) {
-                if (isSlotOccupied(i)) {
-                    return values[i];
-                }
-                i++;
+            if (nextOccupiedSlot < 0) {
+                throw new NoSuchElementException();
             }
-            throw new NoSuchElementException();
+            return values[nextOccupiedSlot];
         }
 
-        /**
-         * Removes the last returned entry.
-         */
         public void remove() {
             if (lastReturnedIndex < 0) {
                 throw new IllegalStateException("next() has not been called or remove() already called");
@@ -817,20 +800,26 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
             lastReturnedIndex = -1;
         }
 
-        /**
-         * Applies the given consumer to all remaining entries.
-         */
         public void forEachRemaining(final #upperKey##upperValue#Consumer action) {
             Objects.requireNonNull(action);
 
             final #primitiveKey#[] ks = keys;
             final #primitiveValue#[] vs = values;
+
+            // Process pre-computed next slot if available
+            if (nextOccupiedSlot >= 0) {
+                action.accept(ks[nextOccupiedSlot], vs[nextOccupiedSlot]);
+                cursor = nextOccupiedSlot + 1;
+            }
+
+            // Continue from cursor
             while (cursor < ks.length) {
                 if (isSlotOccupied(cursor)) {
                     action.accept(ks[cursor], vs[cursor]);
                 }
                 cursor++;
             }
+            nextOccupiedSlot = -1;
         }
 
         @Override

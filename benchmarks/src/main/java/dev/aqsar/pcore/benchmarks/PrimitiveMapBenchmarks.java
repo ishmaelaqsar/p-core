@@ -12,8 +12,8 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Warmup(iterations = 5, time = 1)
-@Measurement(iterations = 10, time = 1)
+@Warmup(iterations = 3, time = 1)
+@Measurement(iterations = 5, time = 1)
 @Fork(value = 3, jvmArgsAppend = {"-XX:+UseG1GC", "-Xms2g", "-Xmx2g"})
 @State(Scope.Thread)
 public class PrimitiveMapBenchmarks {
@@ -64,8 +64,6 @@ public class PrimitiveMapBenchmarks {
         jdkLongMap = new HashMap<>(size);
     }
 
-    // ==================== Put Benchmarks ====================
-
     @Benchmark
     public Int2IntHashMap myIntMap_put() {
         for (int i = 0; i < size; i++) {
@@ -114,8 +112,6 @@ public class PrimitiveMapBenchmarks {
         return jdkLongMap;
     }
 
-    // ==================== Get Benchmarks ====================
-
     @Benchmark
     public void myIntMap_get(Blackhole bh) {
         for (int i = 0; i < size; i++) {
@@ -158,8 +154,6 @@ public class PrimitiveMapBenchmarks {
         }
     }
 
-    // ==================== ContainsKey Benchmarks ====================
-
     @Benchmark
     public void myIntMap_containsKey(Blackhole bh) {
         for (int i = 0; i < size; i++) {
@@ -201,8 +195,6 @@ public class PrimitiveMapBenchmarks {
             bh.consume(jdkLongMap.containsKey(longKeys[i]));
         }
     }
-
-    // ==================== Iteration Benchmarks ====================
 
     @Benchmark
     public void myIntMap_iteration(Blackhole bh) {

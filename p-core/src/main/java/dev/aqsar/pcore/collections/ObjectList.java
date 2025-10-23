@@ -30,11 +30,6 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
     private static final int ITERATOR_POOL_SIZE = 8;
 
     /**
-     * Cache line optimization constant for bulk operations.
-     */
-    private static final int CACHE_LINE_LONGS = 8;
-
-    /**
      * Array of elements stored in this list.
      */
     private E[] elements;
@@ -210,12 +205,11 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
 
     @Override
     public void clear() {
+        final int oldSize = size;
         size = 0;
+        // Clear references to allow GC (only if not pre-allocated)
         if (preAllocationFactory == null) {
-            Arrays.fill(elements, 0, size, null);
-        }
-        if (iteratorPool != null) {
-            iteratorAvailableBits = 0xFFL;
+            Arrays.fill(elements, 0, oldSize, null);
         }
     }
 
@@ -271,6 +265,10 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
             System.arraycopy(elements, index + 1, elements, index, numMoved);
         }
         size--;
+        // Clear reference to allow GC (only if not pre-allocated)
+        if (preAllocationFactory == null) {
+            elements[size] = null;
+        }
         return oldValue;
     }
 
@@ -278,39 +276,18 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
     public int indexOf(@Nullable final Object o) {
         final E[] els = elements;
         final int s = size;
-        int i = 0;
 
-        final int limit = s - (CACHE_LINE_LONGS - 1);
-        for (; i < limit; i += 8) {
-            if (Objects.equals(els[i], o)) {
-                return i;
+        if (o == null) {
+            for (int i = 0; i < s; i++) {
+                if (els[i] == null) {
+                    return i;
+                }
             }
-            if (Objects.equals(els[i + 1], o)) {
-                return i + 1;
-            }
-            if (Objects.equals(els[i + 2], o)) {
-                return i + 2;
-            }
-            if (Objects.equals(els[i + 3], o)) {
-                return i + 3;
-            }
-            if (Objects.equals(els[i + 4], o)) {
-                return i + 4;
-            }
-            if (Objects.equals(els[i + 5], o)) {
-                return i + 5;
-            }
-            if (Objects.equals(els[i + 6], o)) {
-                return i + 6;
-            }
-            if (Objects.equals(els[i + 7], o)) {
-                return i + 7;
-            }
-        }
-
-        for (; i < s; i++) {
-            if (Objects.equals(els[i], o)) {
-                return i;
+        } else {
+            for (int i = 0; i < s; i++) {
+                if (o.equals(els[i])) {
+                    return i;
+                }
             }
         }
         return -1;
@@ -322,42 +299,15 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
     }
 
     /**
-     * Identity-based index lookup.
+     * Identity-based index lookup (reference equality).
+     * This is faster than indexOf() because it uses == instead of equals().
      */
     public int indexOfIdentity(@Nullable final Object o) {
         final E[] els = elements;
         final int s = size;
-        int i = 0;
 
-        final int limit = s - (CACHE_LINE_LONGS - 1);
-        for (; i < limit; i += 8) {
-            if (els[i] == o) {
-                return i;
-            }
-            if (els[i + 1] == o) {
-                return i + 1;
-            }
-            if (els[i + 2] == o) {
-                return i + 2;
-            }
-            if (els[i + 3] == o) {
-                return i + 3;
-            }
-            if (els[i + 4] == o) {
-                return i + 4;
-            }
-            if (els[i + 5] == o) {
-                return i + 5;
-            }
-            if (els[i + 6] == o) {
-                return i + 6;
-            }
-            if (els[i + 7] == o) {
-                return i + 7;
-            }
-        }
-
-        for (; i < s; i++) {
+        // Simple linear search with identity comparison
+        for (int i = 0; i < s; i++) {
             if (els[i] == o) {
                 return i;
             }
@@ -459,9 +409,16 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
      * Supports pooling to reduce allocation overhead.
      */
     public final class ObjectListIterator implements ListIterator<E>, AutoCloseable {
+        // Pad to avoid false sharing between pooled iterators (56 bytes = 7 longs)
+        private long p0, p1, p2, p3, p4, p5, p6;
+
+        // Hot fields accessed during iteration (12 bytes = 3 ints)
         private final int poolIndex;
         private int cursor;
         private int lastRet;
+
+        // Trailing padding to complete cache line (52 bytes to reach 120 bytes total)
+        private long p8, p9, p10, p11, p12, p13;
 
         private ObjectListIterator(final int poolIndex) {
             this.poolIndex = poolIndex;
@@ -504,9 +461,61 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
         @Override
         public void set(final E value) {
             if (lastRet < 0) {
-                throw new IllegalStateException();
+                throw new IllegalStateException("Cannot set before calling next() or previous()");
+            }
+            if (preAllocationFactory != null) {
+                throw new UnsupportedOperationException("Cannot set when pre-allocation is enabled");
             }
             elements[lastRet] = value;
+        }
+
+        @Override
+        public void add(final E element) {
+            if (preAllocationFactory != null) {
+                throw new UnsupportedOperationException("Cannot add when pre-allocation is enabled");
+            }
+
+            final int i = cursor;
+            if (size == elements.length) {
+                grow();
+            }
+
+            // Shift elements to make room
+            if (i < size) {
+                System.arraycopy(elements, i, elements, i + 1, size - i);
+            }
+
+            elements[i] = element;
+            size++;
+            cursor = i + 1;
+            lastRet = -1; // Invalidate for set/remove
+        }
+
+        @Override
+        public void remove() {
+            if (lastRet < 0) {
+                throw new IllegalStateException("Cannot remove before calling next() or previous()");
+            }
+
+            // Shift elements left
+            final int numMoved = size - lastRet - 1;
+            if (numMoved > 0) {
+                System.arraycopy(elements, lastRet + 1, elements, lastRet, numMoved);
+            }
+
+            size--;
+
+            // Clear reference to allow GC (only if not pre-allocated)
+            if (preAllocationFactory == null) {
+                elements[size] = null;
+            }
+
+            // Adjust cursor if we removed before it
+            if (lastRet < cursor) {
+                cursor--;
+            }
+
+            lastRet = -1; // Invalidate for set/remove
         }
 
         @Override
@@ -522,16 +531,6 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
         @Override
         public void close() {
             ObjectList.this.returnIterator(this);
-        }
-
-        @Override
-        public void add(final E element) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
         }
     }
 }
