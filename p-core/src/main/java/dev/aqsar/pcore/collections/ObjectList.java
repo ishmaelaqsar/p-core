@@ -1,33 +1,65 @@
 package dev.aqsar.pcore.collections;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Supplier;
 
 /**
- * A List implementation that stores #primitive# values without boxing to achieve high performance and avoid allocations.
- * This class is not thread-safe.
+ * A List implementation that stores objects efficiently with optional pre-allocation.
+ * <p>
+ * Supports a pool of reusable iterators to reduce allocations in tight loops.
+ * Not thread-safe: concurrent modifications must be externally synchronized.
+ *
+ * @param <E> the type of elements stored in this list
  */
 public final class ObjectList<E> extends AbstractList<E> implements List<E>, RandomAccess {
 
+    /**
+     * Default initial capacity for new lists.
+     */
     public static final int DEFAULT_INITIAL_CAPACITY = 8;
-    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
-    private static final int ITERATOR_POOL_SIZE = 8;
-    private static final int CACHE_LINE_LONGS = 8; // 64 bytes / 8 bytes per long
 
-    // Hot fields - accessed on every operation (grouped for cache locality)
+    /**
+     * Maximum array size to avoid exceeding {@link Integer#MAX_VALUE}.
+     */
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
+    /**
+     * Number of pooled iterators.
+     */
+    private static final int ITERATOR_POOL_SIZE = 8;
+
+    /**
+     * Cache line optimization constant for bulk operations.
+     */
+    private static final int CACHE_LINE_LONGS = 8;
+
+    /**
+     * Array of elements stored in this list.
+     */
     private E[] elements;
+
+    /**
+     * Number of elements currently in the list.
+     */
     private int size = 0;
 
-    // Warm fields - accessed frequently but not every operation
+    /**
+     * Optional factory for pre-allocating elements.
+     */
     @Nullable
     private final Supplier<E> preAllocationFactory;
 
-    // Cold fields - accessed rarely (iterator pool)
+    /**
+     * Pool of iterators for reuse.
+     */
     @Nullable
     private final Object[] iteratorPool;
-    private long iteratorAvailableBits; // Bitset for availability (fits in single register/cache line)
+
+    /**
+     * Bitset tracking available iterators in the pool.
+     */
+    private long iteratorAvailableBits;
 
     @SuppressWarnings("unchecked")
     private ObjectList(final int initialCapacity,
@@ -54,14 +86,32 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
         }
     }
 
+    /**
+     * Returns a builder for creating a customized ObjectList.
+     *
+     * @param <E> the element type
+     * @return a new Builder instance
+     */
     public static <E> Builder<E> builder() {
         return new Builder<>();
     }
 
+    /**
+     * Adds all elements from the specified array.
+     *
+     * @param values the array of elements to add
+     */
     public void addAll(final E[] values) {
         addAll(values, 0, values.length);
     }
 
+    /**
+     * Adds a range of elements from the specified array.
+     *
+     * @param values the source array
+     * @param offset starting index in the array
+     * @param length number of elements to add
+     */
     public void addAll(final E[] values, final int offset, final int length) {
         Objects.checkFromIndexSize(offset, length, values.length);
         if (length == 0) {
@@ -72,17 +122,35 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
         size += length;
     }
 
+    /**
+     * Ensures that this list has at least the specified capacity.
+     *
+     * @param minCapacity minimum required capacity
+     */
     public void ensureCapacity(final int minCapacity) {
         if (minCapacity > elements.length) {
             grow(minCapacity);
         }
     }
 
+    /**
+     * Borrows a pooled iterator starting at index 0.
+     * <p>
+     * Returns null if the pool is disabled or exhausted.
+     *
+     * @return a pooled iterator or null
+     */
     @Nullable
     public ObjectListIterator borrowIterator() {
         return borrowIterator(0);
     }
 
+    /**
+     * Borrows a pooled iterator starting at the specified index.
+     *
+     * @param index starting index
+     * @return a pooled iterator or null if pool is disabled or exhausted
+     */
     @Nullable
     public ObjectListIterator borrowIterator(final int index) {
         Objects.checkIndex(index, size + 1);
@@ -90,16 +158,12 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
             return null;
         }
 
-        // Use bitset for O(1) lookup of available iterator
         long bits = iteratorAvailableBits;
         if (bits == 0) {
-            return null; // No available iterators
+            return null;
         }
 
-        // Find first set bit (lowest available iterator)
         final int poolIndex = Long.numberOfTrailingZeros(bits);
-
-        // Clear the bit (mark as unavailable)
         iteratorAvailableBits = bits & ~(1L << poolIndex);
 
         @SuppressWarnings("unchecked") final ObjectListIterator iter =
@@ -108,10 +172,16 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
         return iter;
     }
 
+    /**
+     * Returns a previously borrowed iterator to the pool.
+     *
+     * @param iterator the iterator to return
+     */
     public void returnIterator(@Nullable final ObjectListIterator iterator) {
         if (iteratorPool == null || iterator == null) {
             return;
         }
+
         final int poolIndex = iterator.poolIndex;
         if (poolIndex < 0 || poolIndex >= ITERATOR_POOL_SIZE) {
             return;
@@ -123,10 +193,12 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
             return;
         }
 
-        // Set the bit (mark as available)
         iteratorAvailableBits |= (1L << poolIndex);
     }
 
+    /**
+     * Returns the number of available pooled iterators.
+     */
     public int availableIteratorCount() {
         return iteratorPool == null ? 0 : Long.bitCount(iteratorAvailableBits);
     }
@@ -156,8 +228,7 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
     @Override
     public boolean add(@Nullable final E element) {
         if (preAllocationFactory != null) {
-            throw new UnsupportedOperationException(
-                    "Use addPreAllocated() when pre-allocation is enabled");
+            throw new UnsupportedOperationException("Use addPreAllocated() when pre-allocation is enabled");
         }
         if (size == elements.length) {
             grow();
@@ -166,6 +237,11 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
         return true;
     }
 
+    /**
+     * Adds a pre-allocated element from the factory.
+     *
+     * @return the pre-allocated element
+     */
     public E addPreAllocated() {
         if (preAllocationFactory == null) {
             throw new UnsupportedOperationException("A pre-allocation factory must be provided");
@@ -204,11 +280,8 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
         final int s = size;
         int i = 0;
 
-        // Process in chunks of 8 for better cache line utilization
-        // 8 longs/doubles (64 bytes) or 16 ints (64 bytes) align with cache line boundaries
         final int limit = s - (CACHE_LINE_LONGS - 1);
         for (; i < limit; i += 8) {
-            // Manual unrolling helps branch predictor and keeps data in L1 cache
             if (Objects.equals(els[i], o)) {
                 return i;
             }
@@ -235,7 +308,6 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
             }
         }
 
-        // Handle remaining elements
         for (; i < s; i++) {
             if (Objects.equals(els[i], o)) {
                 return i;
@@ -249,16 +321,16 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
         return indexOf(o) >= 0;
     }
 
+    /**
+     * Identity-based index lookup.
+     */
     public int indexOfIdentity(@Nullable final Object o) {
         final E[] els = elements;
         final int s = size;
         int i = 0;
 
-        // Process in chunks of 8 for better cache line utilization
-        // 8 longs/doubles (64 bytes) or 16 ints (64 bytes) align with cache line boundaries
         final int limit = s - (CACHE_LINE_LONGS - 1);
         for (; i < limit; i += 8) {
-            // Manual unrolling helps branch predictor and keeps data in L1 cache
             if (els[i] == o) {
                 return i;
             }
@@ -285,7 +357,6 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
             }
         }
 
-        // Handle remaining elements
         for (; i < s; i++) {
             if (els[i] == o) {
                 return i;
@@ -294,6 +365,9 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
         return -1;
     }
 
+    /**
+     * Checks identity-based containment.
+     */
     public boolean containsIdentity(@Nullable final Object o) {
         return indexOfIdentity(o) >= 0;
     }
@@ -302,7 +376,7 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
     public ListIterator<E> listIterator(final int index) {
         @Nullable final ObjectListIterator it = borrowIterator(index);
         if (it == null) {
-            return new ObjectListIterator(-1); // fallback
+            return new ObjectListIterator(-1);
         }
         return it;
     }
@@ -319,26 +393,19 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
     private void grow(final int minCapacity) {
         final int oldCapacity = elements.length;
         int newCapacity = oldCapacity << 1;
-
-        // Switch to 1.5x growth for large arrays to reduce memory waste
-        // and improve cache utilization
         if (oldCapacity > 1024 * 1024) {
             newCapacity = oldCapacity + (oldCapacity >> 1);
         }
-
         if (newCapacity < minCapacity) {
             newCapacity = minCapacity;
         }
-
         if (newCapacity < 0 || newCapacity > MAX_ARRAY_SIZE) {
             if (oldCapacity == MAX_ARRAY_SIZE) {
-                throw new OutOfMemoryError("#upper#List size limit exceeded");
+                throw new OutOfMemoryError("ObjectList size limit exceeded");
             }
             newCapacity = minCapacity > MAX_ARRAY_SIZE ? Integer.MAX_VALUE : MAX_ARRAY_SIZE;
         }
-
         elements = Arrays.copyOf(elements, newCapacity);
-
         if (preAllocationFactory != null) {
             for (int i = oldCapacity; i < newCapacity; i++) {
                 elements[i] = preAllocationFactory.get();
@@ -346,6 +413,9 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
         }
     }
 
+    /**
+     * Builder for creating ObjectList instances.
+     */
     public static class Builder<E> {
         private int initialCapacity = DEFAULT_INITIAL_CAPACITY;
         @Nullable
@@ -368,11 +438,13 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
         }
 
         public ObjectList<E> build() {
-            return new ObjectList<E>(initialCapacity, preAllocationFactory, enableIteratorPool);
+            return new ObjectList<>(initialCapacity, preAllocationFactory, enableIteratorPool);
         }
     }
 
-    // Pool entry wrapper to keep iterator and metadata together in memory
+    /**
+     * Pool entry wrapper for storing iterators.
+     */
     private final class IteratorPoolEntry {
         final ObjectListIterator iterator;
 
@@ -381,16 +453,15 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
         }
     }
 
+    /**
+     * Iterator over ObjectList elements.
+     * <p>
+     * Supports pooling to reduce allocation overhead.
+     */
     public final class ObjectListIterator implements ListIterator<E>, AutoCloseable {
-        // Pad to avoid false sharing between pooled iterators
-        private long p0, p1, p2, p3, p4, p5, p6;
-
         private final int poolIndex;
         private int cursor;
         private int lastRet;
-
-        // More padding to ensure this iterator doesn't share cache lines
-        private long p8, p9, p10, p11, p12, p13, p14;
 
         private ObjectListIterator(final int poolIndex) {
             this.poolIndex = poolIndex;
@@ -455,12 +526,12 @@ public final class ObjectList<E> extends AbstractList<E> implements List<E>, Ran
 
         @Override
         public void add(final E element) {
-            throw new UnsupportedOperationException("add not supported");
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException("remove not supported");
+            throw new UnsupportedOperationException();
         }
     }
 }

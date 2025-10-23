@@ -9,8 +9,57 @@ import java.util.Objects;
 import java.util.RandomAccess;
 
 /**
- * A List implementation that stores #primitive# values without boxing to achieve high performance and avoid allocations.
- * This class is not thread-safe.
+ * A high-performance list implementation for #primitive# values that avoids boxing and allocations.
+ * <p>
+ * Features:
+ * <ul>
+ *   <li>Stores primitive values directly in a contiguous array.</li>
+ *   <li>Supports optional {@code nullValue} semantics for boxed access.</li>
+ *   <li>Provides an optional pool of reusable iterators to reduce allocation pressure in tight loops.</li>
+ *   <li>Random access is O(1).</li>
+ * </ul>
+ * <p>
+ * This class is <strong>not thread-safe</strong>. Concurrent modifications must be externally synchronized.
+ * <p>
+ * Usage example:
+ * <pre>{@code
+ * #upper#List list = #upper#List.builder()
+ *      .initialCapacity(16)
+ *      .nullValue(DEFAULT_NULL_VALUE)
+ *      .build();
+ *
+ * list.add#upper#(42);
+ * list.add#upper#(7);
+ *
+ * // Access primitive values
+ * int val = list.get#upper#(0);
+ *
+ * // Access boxed values (null-safe if nullValue is used)
+ * Integer boxed = list.get(0);
+ *
+ * // Using pooled iterator for repeated iteration
+ * #upper#List.#upper#ListIterator iter = list.borrowIterator();
+ * try {
+ *     while (iter.hasNext()) {
+ *         int v = iter.next#upper#();
+ *         // modify or process
+ *     }
+ * } finally {
+ *     iter.close(); // returns iterator to pool
+ * }
+ * }</pre>
+ * <p>
+ * Builder options:
+ * <ul>
+ *   <li>{@link Builder\#initialCapacity(int)}: sets initial internal array size.</li>
+ *   <li>{@link Builder\#nullValue(#primitive#)}: sets a sentinel value to represent null in boxed view.</li>
+ *   <li>{@link Builder\#disableNullValue()}: disables nullValue semantics.</li>
+ *   <li>{@link Builder\#disableIteratorPool()}: disables the internal iterator pool.</li>
+ * </ul>
+ * <p>
+ *
+ * @see java.util.List
+ * @see java.util.RandomAccess
  */
 public final class #upper#List extends AbstractList<#boxed#> implements List<#boxed#>, RandomAccess {
 
@@ -51,21 +100,47 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
 
     public static Builder builder() { return new Builder(); }
 
+    /**
+     * Returns the primitive value at the specified index.
+     *
+     * @param index the index of the element to return
+     * @return the primitive value at the specified position
+     * @throws IndexOutOfBoundsException if the index is out of range
+     * @see \#get(int) for boxed access
+     */
     public #primitive# get#upper#(final int index) {
         Objects.checkIndex(index, size);
         return elements[index];
     }
 
+    /**
+     * Adds a primitive value to the end of the list.
+     *
+     * @param value the value to add
+     */
     public void add#upper#(final #primitive# value) {
         if (size == elements.length) grow();
         elements[size++] = value;
     }
 
-    public void addAll#upper#(final #primitive#[] values) {
-        addAll#upper#(values, 0, values.length);
+    /**
+     * Adds all values from the given array to the end of the list.
+     *
+     * @param values the array of values to add
+     */
+    public void addAll#upper#s(final #primitive#[] values) {
+        addAll#upper#s(values, 0, values.length);
     }
 
-    public void addAll#upper#(final #primitive#[] values, final int offset, final int length) {
+    /**
+     * Adds a range of values from the given array to the end of the list.
+     *
+     * @param values the source array
+     * @param offset starting index in the array
+     * @param length number of elements to add
+     * @throws IndexOutOfBoundsException if the range is invalid
+     */
+    public void addAll#upper#s(final #primitive#[] values, final int offset, final int length) {
         Objects.checkFromIndexSize(offset, length, values.length);
         if (length == 0) return;
         ensureCapacity(size + length);
@@ -73,6 +148,14 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
         size += length;
     }
 
+    /**
+     * Replaces the element at the specified index with the given value.
+     *
+     * @param index the index of the element to replace
+     * @param value the new value
+     * @return the previous value at the index
+     * @throws IndexOutOfBoundsException if the index is out of range
+     */
     public #primitive# set#upper#(final int index, final #primitive# value) {
         Objects.checkIndex(index, size);
         final #primitive# oldValue = elements[index];
@@ -80,6 +163,12 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
         return oldValue;
     }
 
+    /**
+     * Returns the first index of the given value in the list, or -1 if not present.
+     *
+     * @param value the value to search for
+     * @return index of the first occurrence, or -1 if not found
+     */
     public int indexOf#upper#(final #primitive# value) {
         final #primitive#[] els = elements;
         final int s = size;
@@ -107,22 +196,62 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
         return -1;
     }
 
+    /**
+     * Checks if the list contains the given value.
+     *
+     * @param value the value to check
+     * @return {@code true} if the value is present, {@code false} otherwise
+     */
     public boolean contains#upper#(final #primitive# value) {
         return indexOf#upper#(value) >= 0;
     }
 
+    /**
+     * Returns a new array containing all elements of the list.
+     *
+     * @return an array copy of the list elements
+     */
     public #primitive#[] to#upper#Array() {
         return Arrays.copyOf(elements, size);
     }
 
+    /**
+     * Ensures the list has at least the specified capacity, growing internal storage if needed.
+     *
+     * @param minCapacity the minimum capacity to ensure
+     */
     public void ensureCapacity(final int minCapacity) {
         if (minCapacity > elements.length) {
             grow(minCapacity);
         }
     }
 
+    /**
+     * Borrows a pooled iterator starting at index 0.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * #upper#List.#upper#ListIterator iter = list.borrowIterator();
+     * try {
+     *     while (iter.hasNext()) {
+     *         int v = iter.next#upper#();
+     *     }
+     * } finally {
+     *     iter.close();
+     * }
+     * }</pre>
+     *
+     * @return a pooled iterator or {@code null} if pool is disabled or exhausted
+     */
     public #upper#ListIterator borrowIterator() { return borrowIterator(0); }
 
+    /**
+     * Borrows a pooled iterator starting at a specific index.
+     *
+     * @param index starting position for iteration
+     * @return a pooled iterator or {@code null} if pool is disabled or exhausted
+     * @throws IndexOutOfBoundsException if index is invalid
+     */
     public #upper#ListIterator borrowIterator(final int index) {
         Objects.checkIndex(index, size + 1);
         if (iteratorPool == null) return null;
@@ -142,6 +271,11 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
         return iter;
     }
 
+    /**
+     * Returns a previously borrowed iterator to the pool.
+     *
+     * @param iterator the iterator to return
+     */
     public void returnIterator(final #upper#ListIterator iterator) {
         if (iteratorPool == null || iterator == null) return;
         final int poolIndex = iterator.poolIndex;
@@ -152,34 +286,81 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
         iteratorAvailableBits |= (1L << poolIndex);
     }
 
+    /**
+    * Returns the number of available pooled iterators.
+    *
+    * @return the count of free iterators in the pool
+    */
     public int availableIteratorCount() {
         return iteratorPool == null ? 0 : Long.bitCount(iteratorAvailableBits);
     }
 
+    /**
+     * Returns the current size of the list.
+     *
+     * @return the number of elements
+     */
     @Override
     public int size() { return size; }
 
+    /**
+     * Clears all elements from the list.
+     */
     @Override
     public void clear() { size = 0; }
 
+    /**
+     * Returns the boxed element at the specified index.
+     * <p>
+     * If {@code useNullValue} is enabled, the sentinel {@code nullValue} is converted to {@code null}.
+     *
+     * @param index the index to access
+     * @return the boxed value
+     * @throws IndexOutOfBoundsException if index is invalid
+     */
     @Override
     public #boxed# get(final int index) {
         final #primitive# value = get#upper#(index);
         return useNullValue && value == nullValue ? null : value;
     }
 
+    /**
+     * Adds a boxed element to the list.
+     * <p>
+     * Converts {@code null} to {@code nullValue} if null semantics are enabled.
+     *
+     * @param element the element to add
+     * @return always {@code true}
+     */
     @Override
     public boolean add(final #boxed# element) {
         add#upper#(useNullValue && element == null ? nullValue : element);
         return true;
     }
 
+    /**
+     * Replaces the element at the specified index with a boxed value.
+     * <p>
+     * Converts {@code null} to {@code nullValue} if null semantics are enabled.
+     *
+     * @param index the index to set
+     * @param element the new element
+     * @return the previous element (boxed)
+     * @throws IndexOutOfBoundsException if index is invalid
+     */
     @Override
     public #boxed# set(final int index, final #boxed# element) {
         final #primitive# oldValue = set#upper#(index, useNullValue && element == null ? nullValue : element);
         return useNullValue && oldValue == nullValue ? null : oldValue;
     }
 
+    /**
+     * Removes the element at the specified index.
+     *
+     * @param index the index to remove
+     * @return the removed element (boxed)
+     * @throws IndexOutOfBoundsException if index is invalid
+     */
     @Override
     public #boxed# remove(final int index) {
         Objects.checkIndex(index, size);
@@ -190,6 +371,12 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
         return useNullValue && oldValue == nullValue ? null : oldValue;
     }
 
+    /**
+     * Returns the index of the first occurrence of the specified object.
+     *
+     * @param o the object to search for
+     * @return the index of the first occurrence, or -1 if not found
+     */
     @Override
     public int indexOf(final Object o) {
         if (useNullValue && o == null) return indexOf#upper#(nullValue);
@@ -197,12 +384,34 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
         return -1;
     }
 
+    /**
+     * Checks if the list contains the specified object.
+     *
+     * @param o the object to check
+     * @return {@code true} if the object is present, {@code false} otherwise
+     */
     @Override
     public boolean contains(final Object o) { return indexOf(o) >= 0; }
 
+    /**
+     * Returns a boxed {@link ListIterator} starting at a given index.
+     * <p>
+     * This iterator is <strong>not pooled</strong> and allocates a new instance.
+     *
+     * @param index starting index
+     * @return a boxed {@link ListIterator}
+     * @throws IndexOutOfBoundsException if index is invalid
+     */
     @Override
     public ListIterator<#boxed#> listIterator(final int index) { return new BoxedIteratorWrapper(index); }
 
+    /**
+     * Returns a boxed {@link ListIterator} starting at index 0.
+     * <p>
+     * This iterator is <strong>not pooled</strong> and allocates a new instance.
+     *
+     * @return a boxed {@link ListIterator}
+     */
     @Override
     public ListIterator<#boxed#> listIterator() { return listIterator(0); }
 

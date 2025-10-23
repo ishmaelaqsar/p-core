@@ -253,7 +253,7 @@ class LongListTest {
         @DisplayName("should add all from array")
         void testAddAllArray() {
             long[] values = {1, 2, 3, 4};
-            list.addAllLong(values);
+            list.addAllLongs(values);
 
             assertEquals(4, list.size());
             assertEquals(1, list.getLong(0));
@@ -264,7 +264,7 @@ class LongListTest {
         @DisplayName("should add all from array with offset")
         void testAddAllArrayWithOffset() {
             long[] values = {10, 20, 30, 40, 50};
-            list.addAllLong(values, 1, 3);
+            list.addAllLongs(values, 1, 3);
 
             assertEquals(3, list.size());
             assertEquals(20, list.getLong(0));
@@ -276,7 +276,7 @@ class LongListTest {
         @DisplayName("should handle empty addAll")
         void testAddAllEmpty() {
             long[] empty = {};
-            list.addAllLong(empty);
+            list.addAllLongs(empty);
             assertEquals(0, list.size());
         }
 
@@ -284,7 +284,7 @@ class LongListTest {
         @DisplayName("should handle zero-length addAll")
         void testAddAllZeroLength() {
             long[] values = {1, 2, 3};
-            list.addAllLong(values, 1, 0);
+            list.addAllLongs(values, 1, 0);
             assertEquals(0, list.size());
         }
 
@@ -293,9 +293,9 @@ class LongListTest {
         void testAddAllInvalidRange() {
             long[] values = {1, 2, 3};
 
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllLong(values, -1, 2));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllLong(values, 0, 10));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllLong(values, 2, 5));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllLongs(values, -1, 2));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllLongs(values, 0, 10));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllLongs(values, 2, 5));
         }
 
         @Test
@@ -846,7 +846,7 @@ class LongListTest {
 
             // Bulk add
             long[] more = {1000, 2000};
-            list.addAllLong(more);
+            list.addAllLongs(more);
             assertEquals(11, list.size());
 
             // Clear

@@ -253,7 +253,7 @@ class IntListTest {
         @DisplayName("should add all from array")
         void testAddAllArray() {
             int[] values = {1, 2, 3, 4};
-            list.addAllInt(values);
+            list.addAllInts(values);
 
             assertEquals(4, list.size());
             assertEquals(1, list.getInt(0));
@@ -264,7 +264,7 @@ class IntListTest {
         @DisplayName("should add all from array with offset")
         void testAddAllArrayWithOffset() {
             int[] values = {10, 20, 30, 40, 50};
-            list.addAllInt(values, 1, 3);
+            list.addAllInts(values, 1, 3);
 
             assertEquals(3, list.size());
             assertEquals(20, list.getInt(0));
@@ -276,7 +276,7 @@ class IntListTest {
         @DisplayName("should handle empty addAll")
         void testAddAllEmpty() {
             int[] empty = {};
-            list.addAllInt(empty);
+            list.addAllInts(empty);
             assertEquals(0, list.size());
         }
 
@@ -284,7 +284,7 @@ class IntListTest {
         @DisplayName("should handle zero-length addAll")
         void testAddAllZeroLength() {
             int[] values = {1, 2, 3};
-            list.addAllInt(values, 1, 0);
+            list.addAllInts(values, 1, 0);
             assertEquals(0, list.size());
         }
 
@@ -293,9 +293,9 @@ class IntListTest {
         void testAddAllInvalidRange() {
             int[] values = {1, 2, 3};
 
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllInt(values, -1, 2));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllInt(values, 0, 10));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllInt(values, 2, 5));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllInts(values, -1, 2));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllInts(values, 0, 10));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllInts(values, 2, 5));
         }
 
         @Test
@@ -846,7 +846,7 @@ class IntListTest {
 
             // Bulk add
             int[] more = {1000, 2000};
-            list.addAllInt(more);
+            list.addAllInts(more);
             assertEquals(11, list.size());
 
             // Clear

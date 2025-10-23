@@ -22,35 +22,35 @@ class Double2LongHashMapTest {
         map.put(1.5, 100L);
         map.put(2.5, 200L);
 
-        assertEquals(100L, map.getLong(1.5));
-        assertEquals(200L, map.getLong(2.5));
+        assertEquals(100L, map.get(1.5));
+        assertEquals(200L, map.get(2.5));
     }
 
     @Test
     void testGetMissing() {
-        assertEquals(Long.MIN_VALUE, map.getLong(999.999));
+        assertEquals(Long.MIN_VALUE, map.get(999.999));
     }
 
     @Test
     void testContainsKey() {
         map.put(10.0, 123L);
-        assertTrue(map.containsDoubleKey(10.0));
-        assertFalse(map.containsDoubleKey(99.9));
+        assertTrue(map.containsKey(10.0));
+        assertFalse(map.containsKey(99.9));
     }
 
     @Test
     void testContainsValue() {
         map.put(1.0, 100L);
         map.put(2.0, 200L);
-        assertTrue(map.containsLongValue(100L));
-        assertFalse(map.containsLongValue(999L));
+        assertTrue(map.containsValue(100L));
+        assertFalse(map.containsValue(999L));
     }
 
     @Test
     void testRemove() {
         map.put(3.3, 300L);
-        assertEquals(300L, map.removeLong(3.3));
-        assertEquals(Long.MIN_VALUE, map.getLong(3.3));
+        assertEquals(300L, map.remove(3.3));
+        assertEquals(Long.MIN_VALUE, map.get(3.3));
         assertFalse(map.containsKey(3.3));
     }
 
@@ -70,17 +70,27 @@ class Double2LongHashMapTest {
         map.put(2.2, 20L);
         map.clear();
         assertEquals(0, map.size());
-        assertEquals(Long.MIN_VALUE, map.getLong(1.1));
+        assertEquals(Long.MIN_VALUE, map.get(1.1));
     }
 
     @Test
     void testBoxedPutAndGet() {
-        map.put(1.5, 100L);
-        map.put(2.5, 200L);
+        map.put(Double.valueOf(1.5), Long.valueOf(100L));
+        map.put(Double.valueOf(2.5), Long.valueOf(200L));
 
-        assertEquals(100L, map.get(1.5));
-        assertEquals(200L, map.get(2.5));
-        assertNull(map.get(999.0)); // missing boxed key still returns null per Map API
+        assertEquals(100L, map.get(Double.valueOf(1.5)));
+        assertEquals(200L, map.get(Double.valueOf(2.5)));
+        assertNull(map.get(Double.valueOf(999.0))); // missing boxed key still returns null per Map API
+    }
+
+    @Test
+    void testBoxedContainsKeyValue() {
+        map.put(1.1, 10L);
+        map.put(2.2, 20L);
+
+        assertTrue(map.containsKey(Double.valueOf(1.1)));
+        assertTrue(map.containsKey(Double.valueOf(2.2)));
+        assertFalse(map.containsKey(Double.valueOf(3.3)));
     }
 
     @Test
@@ -99,32 +109,32 @@ class Double2LongHashMapTest {
     @Test
     void testReplace() {
         map.put(1.0, 10L);
-        assertEquals(10L, map.replaceLong(1.0, 20L));
-        assertEquals(20L, map.getLong(1.0));
+        assertEquals(10L, map.replace(1.0, 20L));
+        assertEquals(20L, map.get(1.0));
 
-        assertEquals(Long.MIN_VALUE, map.replaceLong(2.0, 50L)); // key doesn't exist
+        assertEquals(Long.MIN_VALUE, map.replace(2.0, 50L)); // key doesn't exist
     }
 
     @Test
     void testComputeIfAbsent() {
-        long result = map.computeIfAbsentLong(3.14, k -> 42L);
+        long result = map.computeIfAbsent(3.14, k -> 42L);
         assertEquals(42L, result);
-        assertEquals(42L, map.getLong(3.14));
+        assertEquals(42L, map.get(3.14));
 
         // Existing key — lambda should not run
-        long again = map.computeIfAbsentLong(3.14, k -> 99L);
+        long again = map.computeIfAbsent(3.14, k -> 99L);
         assertEquals(42L, again);
     }
 
     @Test
     void testComputeIfPresent() {
         map.put(1.0, 10L);
-        map.computeIfPresentLong(1.0, (k, v) -> v + 5);
-        assertEquals(15L, map.getLong(1.0));
+        map.computeIfPresent(1.0, (k, v) -> v + 5);
+        assertEquals(15L, map.get(1.0));
 
         // Non-existent key should be ignored
-        map.computeIfPresentLong(2.0, (k, v) -> 100L);
-        assertEquals(Long.MIN_VALUE, map.getLong(2.0));
+        map.computeIfPresent(2.0, (k, v) -> 100L);
+        assertEquals(Long.MIN_VALUE, map.get(2.0));
     }
 
     @Test
@@ -173,21 +183,21 @@ class Double2LongHashMapTest {
 
     @Test
     void testCompute() {
-        map.computeLong(1.0, (k, v) -> v == map.nullValue ? 10L : v + 1);
-        assertEquals(10L, map.getLong(1.0));
+        map.compute(1.0, (k, v) -> v == map.nullValue ? 10L : v + 1);
+        assertEquals(10L, map.get(1.0));
 
-        map.computeLong(1.0, (k, v) -> v + 5);
-        assertEquals(15L, map.getLong(1.0));
+        map.compute(1.0, (k, v) -> v + 5);
+        assertEquals(15L, map.get(1.0));
     }
 
     @Test
     void testMerge() {
-        map.putLong(1.0, 10L);
-        map.mergeLong(1.0, 5L, Long::sum);
-        assertEquals(15L, map.getLong(1.0));
+        map.put(1.0, 10L);
+        map.merge(1.0, 5L, Long::sum);
+        assertEquals(15L, map.get(1.0));
 
-        map.mergeLong(2.0, 7L, Long::sum);
-        assertEquals(7L, map.getLong(2.0));
+        map.merge(2.0, 7L, Long::sum);
+        assertEquals(7L, map.get(2.0));
     }
 
     @Test

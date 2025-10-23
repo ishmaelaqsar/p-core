@@ -19,36 +19,36 @@ class Long2IntHashMapTest {
 
     @Test
     void testPutAndGet() {
-        map.putInt(1L, 100);
-        map.putInt(2L, 200);
-        map.putInt(3L, 300);
+        map.put(1L, 100);
+        map.put(2L, 200);
+        map.put(3L, 300);
 
-        assertEquals(100, map.getInt(1L));
-        assertEquals(200, map.getInt(2L));
-        assertEquals(300, map.getInt(3L));
+        assertEquals(100, map.get(1L));
+        assertEquals(200, map.get(2L));
+        assertEquals(300, map.get(3L));
     }
 
     @Test
     void testPutOverwrite() {
-        map.putInt(1L, 100);
-        map.putInt(1L, 999);
+        map.put(1L, 100);
+        map.put(1L, 999);
 
-        assertEquals(999, map.getInt(1L));
+        assertEquals(999, map.get(1L));
         assertEquals(1, map.size());
     }
 
     @Test
     void testGetMissing() {
-        assertEquals(map.nullValue, map.getInt(999L));
+        assertEquals(map.nullValue, map.get(999L));
     }
 
     @Test
     void testRemove() {
-        map.putInt(1L, 100);
-        map.putInt(2L, 200);
+        map.put(1L, 100);
+        map.put(2L, 200);
 
-        assertEquals(100, map.removeInt(1L));
-        assertFalse(map.containsLongKey(1L));
+        assertEquals(100, map.remove(1L));
+        assertFalse(map.containsKey(1L));
         assertEquals(1, map.size());
     }
 
@@ -58,42 +58,42 @@ class Long2IntHashMapTest {
         long key2 = Long.MAX_VALUE - 1;
         long key3 = Long.MIN_VALUE + 1; // Avoid MIN_VALUE (tombstone)
 
-        map.putInt(key1, 100);
-        map.putInt(key2, 200);
-        map.putInt(key3, 300);
+        map.put(key1, 100);
+        map.put(key2, 200);
+        map.put(key3, 300);
 
-        assertEquals(100, map.getInt(key1));
-        assertEquals(200, map.getInt(key2));
-        assertEquals(300, map.getInt(key3));
+        assertEquals(100, map.get(key1));
+        assertEquals(200, map.get(key2));
+        assertEquals(300, map.get(key3));
     }
 
     @Test
     void testZeroKey() {
         // 0L is EMPTY_KEY sentinel
-        map.putInt(0L, 999);
-        assertEquals(999, map.getInt(0L));
-        assertTrue(map.containsLongKey(0L));
+        map.put(0L, 999);
+        assertEquals(999, map.get(0L));
+        assertTrue(map.containsKey(0L));
 
-        map.removeInt(0L);
-        assertFalse(map.containsLongKey(0L));
+        map.remove(0L);
+        assertFalse(map.containsKey(0L));
     }
 
     @Test
     void testMinValueKey() {
-        assertThrows(IllegalArgumentException.class, () -> map.putInt(Long.MIN_VALUE, 123));
-        assertThrows(IllegalArgumentException.class, () -> map.containsLongKey(Long.MIN_VALUE));
-        assertThrows(IllegalArgumentException.class, () -> map.getInt(Long.MIN_VALUE));
+        assertThrows(IllegalArgumentException.class, () -> map.put(Long.MIN_VALUE, 123));
+        assertThrows(IllegalArgumentException.class, () -> map.containsKey(Long.MIN_VALUE));
+        assertThrows(IllegalArgumentException.class, () -> map.get(Long.MIN_VALUE));
     }
 
     @Test
     void testNegativeKeys() {
-        map.putInt(-1L, 100);
-        map.putInt(-1000L, 200);
-        map.putInt(-999999L, 300);
+        map.put(-1L, 100);
+        map.put(-1000L, 200);
+        map.put(-999999L, 300);
 
-        assertEquals(100, map.getInt(-1L));
-        assertEquals(200, map.getInt(-1000L));
-        assertEquals(300, map.getInt(-999999L));
+        assertEquals(100, map.get(-1L));
+        assertEquals(200, map.get(-1000L));
+        assertEquals(300, map.get(-999999L));
     }
 
     @Test
@@ -106,13 +106,13 @@ class Long2IntHashMapTest {
                        0x00000000FFFFFFFFL};
 
         for (int i = 0; i < keys.length; i++) {
-            map.putInt(keys[i], i * 100);
+            map.put(keys[i], i * 100);
         }
 
         assertEquals(keys.length, map.size());
 
         for (int i = 0; i < keys.length; i++) {
-            assertEquals(i * 100, map.getInt(keys[i]));
+            assertEquals(i * 100, map.get(keys[i]));
         }
     }
 
@@ -120,38 +120,38 @@ class Long2IntHashMapTest {
     void testSequentialKeys() {
         // Test with sequential long keys
         for (long i = 1000000L; i < 1001000L; i++) {
-            map.putInt(i, (int) (i % 1000));
+            map.put(i, (int) (i % 1000));
         }
 
         assertEquals(1000, map.size());
 
         for (long i = 1000000L; i < 1001000L; i++) {
-            assertEquals((int) (i % 1000), map.getInt(i));
+            assertEquals((int) (i % 1000), map.get(i));
         }
     }
 
     @Test
     void testFullIntRange() {
-        map.putInt(1L, Integer.MAX_VALUE);
-        map.putInt(2L, Integer.MIN_VALUE);
-        map.putInt(3L, 0);
-        map.putInt(4L, -1);
+        map.put(1L, Integer.MAX_VALUE);
+        map.put(2L, Integer.MIN_VALUE);
+        map.put(3L, 0);
+        map.put(4L, -1);
 
-        assertEquals(Integer.MAX_VALUE, map.getInt(1L));
-        assertEquals(Integer.MIN_VALUE, map.getInt(2L));
-        assertEquals(0, map.getInt(3L));
-        assertEquals(-1, map.getInt(4L));
+        assertEquals(Integer.MAX_VALUE, map.get(1L));
+        assertEquals(Integer.MIN_VALUE, map.get(2L));
+        assertEquals(0, map.get(3L));
+        assertEquals(-1, map.get(4L));
     }
 
     @Test
     void testIntegerMinValueAsValue() {
         // Integer.MIN_VALUE might be used as nullValue - ensure it works as regular value
-        map.putInt(1L, Integer.MIN_VALUE);
-        map.putInt(2L, Integer.MIN_VALUE);
+        map.put(1L, Integer.MIN_VALUE);
+        map.put(2L, Integer.MIN_VALUE);
 
-        assertEquals(Integer.MIN_VALUE, map.getInt(1L));
-        assertEquals(Integer.MIN_VALUE, map.getInt(2L));
-        assertTrue(map.containsIntValue(Integer.MIN_VALUE));
+        assertEquals(Integer.MIN_VALUE, map.get(1L));
+        assertEquals(Integer.MIN_VALUE, map.get(2L));
+        assertTrue(map.containsValue(Integer.MIN_VALUE));
     }
 
     @Test
@@ -160,14 +160,14 @@ class Long2IntHashMapTest {
 
         // Force multiple resizes
         for (long i = 0; i < 1000; i++) {
-            map.putInt(i * 1000000L, (int) i);
+            map.put(i * 1000000L, (int) i);
         }
 
         assertEquals(1000, map.size());
 
         // Verify all entries after resize
         for (long i = 0; i < 1000; i++) {
-            assertEquals((int) i, map.getInt(i * 1000000L));
+            assertEquals((int) i, map.get(i * 1000000L));
         }
     }
 
@@ -176,22 +176,22 @@ class Long2IntHashMapTest {
         // Create keys that likely collide
         for (long i = 0; i < 1000; i++) {
             long key = i << 32 | i; // High and low 32 bits same
-            map.putInt(key, (int) i);
+            map.put(key, (int) i);
         }
 
         assertEquals(1000, map.size());
 
         for (long i = 0; i < 1000; i++) {
             long key = i << 32 | i;
-            assertEquals((int) i, map.getInt(key));
+            assertEquals((int) i, map.get(key));
         }
     }
 
     @Test
     void testIteratorWithLongKeys() {
-        map.putInt(100L, 1);
-        map.putInt(200L, 2);
-        map.putInt(300L, 3);
+        map.put(100L, 1);
+        map.put(200L, 2);
+        map.put(300L, 3);
 
         try (Long2IntHashMap.LongIntHashMapIterator iter = map.borrowIterator()) {
             Set<Long> keys = new HashSet<>();
@@ -211,9 +211,9 @@ class Long2IntHashMapTest {
 
     @Test
     void testForEachWithLongKeys() {
-        map.putInt(100L, 1);
-        map.putInt(200L, 2);
-        map.putInt(300L, 3);
+        map.put(100L, 1);
+        map.put(200L, 2);
+        map.put(300L, 3);
 
         Set<Long> keys = new HashSet<>();
         Set<Integer> values = new HashSet<>();
@@ -229,25 +229,25 @@ class Long2IntHashMapTest {
 
     @Test
     void testBoxedPutAndGet() {
-        map.put(100L, 1);
-        map.put(200L, 2);
-        map.put(300L, 3);
+        map.put(Long.valueOf(100L), Integer.valueOf(1));
+        map.put(Long.valueOf(200L), Integer.valueOf(2));
+        map.put(Long.valueOf(300L), Integer.valueOf(3));
 
-        assertEquals(1, map.get(100L));
-        assertEquals(2, map.get(200L));
-        assertEquals(3, map.get(300L));
-        assertNull(map.get(999L));
+        assertEquals(1, map.get(Long.valueOf(100L)));
+        assertEquals(2, map.get(Long.valueOf(200L)));
+        assertEquals(3, map.get(Long.valueOf(300L)));
+        assertNull(map.get(Long.valueOf(999L)));
     }
 
     @Test
     void testBoxedContains() {
         map.put(100L, 1);
 
-        assertTrue(map.containsKey(100L));
-        assertTrue(map.containsValue(1));
+        assertTrue(map.containsKey(Long.valueOf(100L)));
+        assertTrue(map.containsValue(Integer.valueOf(1)));
 
-        assertFalse(map.containsKey(200L));
-        assertFalse(map.containsValue(2));
+        assertFalse(map.containsKey(Long.valueOf(200L)));
+        assertFalse(map.containsValue(Integer.valueOf(2)));
 
         // Test wrong types
         assertFalse(map.containsKey("not a long"));
@@ -326,34 +326,34 @@ class Long2IntHashMapTest {
         int size = 100_000;
 
         for (long i = 0; i < size; i++) {
-            map.putInt(i * 1000L, (int) i);
+            map.put(i * 1000L, (int) i);
         }
 
         assertEquals(size, map.size());
 
         // Random access test
         for (long i = 0; i < size; i += 1000) {
-            assertEquals((int) i, map.getInt(i * 1000L));
+            assertEquals((int) i, map.get(i * 1000L));
         }
     }
 
     @Test
     void testManyRemovals() {
         for (long i = 0; i < 1000; i++) {
-            map.putInt(i, (int) i);
+            map.put(i, (int) i);
         }
 
         // Remove every other entry
         for (long i = 0; i < 1000; i += 2) {
-            map.removeInt(i);
+            map.remove(i);
         }
 
         assertEquals(500, map.size());
 
         // Verify remaining entries
         for (long i = 1; i < 1000; i += 2) {
-            assertTrue(map.containsLongKey(i));
-            assertEquals((int) i, map.getInt(i));
+            assertTrue(map.containsKey(i));
+            assertEquals((int) i, map.get(i));
         }
     }
 
@@ -370,7 +370,7 @@ class Long2IntHashMapTest {
     void testBuilderCustomValues() {
         map = Long2IntHashMap.builder().initialCapacity(64).loadFactor(0.6f).nullValue(-777).build();
 
-        assertNull(map.get(1L));
-        assertEquals(-777, map.getInt(1L));
+        assertNull(map.get(Long.valueOf(1L)));
+        assertEquals(-777, map.get(1L));
     }
 }

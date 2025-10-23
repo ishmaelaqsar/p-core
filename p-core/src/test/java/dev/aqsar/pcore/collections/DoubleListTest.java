@@ -253,7 +253,7 @@ class DoubleListTest {
         @DisplayName("should add all from array")
         void testAddAllArray() {
             double[] values = {1, 2, 3, 4};
-            list.addAllDouble(values);
+            list.addAllDoubles(values);
 
             assertEquals(4, list.size());
             assertEquals(1, list.getDouble(0));
@@ -264,7 +264,7 @@ class DoubleListTest {
         @DisplayName("should add all from array with offset")
         void testAddAllArrayWithOffset() {
             double[] values = {10, 20, 30, 40, 50};
-            list.addAllDouble(values, 1, 3);
+            list.addAllDoubles(values, 1, 3);
 
             assertEquals(3, list.size());
             assertEquals(20, list.getDouble(0));
@@ -276,7 +276,7 @@ class DoubleListTest {
         @DisplayName("should handle empty addAll")
         void testAddAllEmpty() {
             double[] empty = {};
-            list.addAllDouble(empty);
+            list.addAllDoubles(empty);
             assertEquals(0, list.size());
         }
 
@@ -284,7 +284,7 @@ class DoubleListTest {
         @DisplayName("should handle zero-length addAll")
         void testAddAllZeroLength() {
             double[] values = {1, 2, 3};
-            list.addAllDouble(values, 1, 0);
+            list.addAllDoubles(values, 1, 0);
             assertEquals(0, list.size());
         }
 
@@ -293,9 +293,9 @@ class DoubleListTest {
         void testAddAllInvalidRange() {
             double[] values = {1, 2, 3};
 
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllDouble(values, -1, 2));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllDouble(values, 0, 10));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllDouble(values, 2, 5));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllDoubles(values, -1, 2));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllDoubles(values, 0, 10));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllDoubles(values, 2, 5));
         }
 
         @Test
@@ -846,7 +846,7 @@ class DoubleListTest {
 
             // Bulk add
             double[] more = {1000, 2000};
-            list.addAllDouble(more);
+            list.addAllDoubles(more);
             assertEquals(11, list.size());
 
             // Clear

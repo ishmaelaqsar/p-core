@@ -253,7 +253,7 @@ class FloatListTest {
         @DisplayName("should add all from array")
         void testAddAllArray() {
             float[] values = {1, 2, 3, 4};
-            list.addAllFloat(values);
+            list.addAllFloats(values);
 
             assertEquals(4, list.size());
             assertEquals(1, list.getFloat(0));
@@ -264,7 +264,7 @@ class FloatListTest {
         @DisplayName("should add all from array with offset")
         void testAddAllArrayWithOffset() {
             float[] values = {10, 20, 30, 40, 50};
-            list.addAllFloat(values, 1, 3);
+            list.addAllFloats(values, 1, 3);
 
             assertEquals(3, list.size());
             assertEquals(20, list.getFloat(0));
@@ -276,7 +276,7 @@ class FloatListTest {
         @DisplayName("should handle empty addAll")
         void testAddAllEmpty() {
             float[] empty = {};
-            list.addAllFloat(empty);
+            list.addAllFloats(empty);
             assertEquals(0, list.size());
         }
 
@@ -284,7 +284,7 @@ class FloatListTest {
         @DisplayName("should handle zero-length addAll")
         void testAddAllZeroLength() {
             float[] values = {1, 2, 3};
-            list.addAllFloat(values, 1, 0);
+            list.addAllFloats(values, 1, 0);
             assertEquals(0, list.size());
         }
 
@@ -293,9 +293,9 @@ class FloatListTest {
         void testAddAllInvalidRange() {
             float[] values = {1, 2, 3};
 
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllFloat(values, -1, 2));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllFloat(values, 0, 10));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllFloat(values, 2, 5));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllFloats(values, -1, 2));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllFloats(values, 0, 10));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllFloats(values, 2, 5));
         }
 
         @Test
@@ -846,7 +846,7 @@ class FloatListTest {
 
             // Bulk add
             float[] more = {1000, 2000};
-            list.addAllFloat(more);
+            list.addAllFloats(more);
             assertEquals(11, list.size());
 
             // Clear
