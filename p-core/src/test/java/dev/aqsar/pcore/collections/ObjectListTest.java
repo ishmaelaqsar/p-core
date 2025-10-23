@@ -11,8 +11,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ObjectListTest {
 
-    // === Shared helpers =======================================================
-
     private static ObjectList<String> newList() {
         return ObjectList.<String>builder().build();
     }
@@ -46,8 +44,6 @@ class ObjectListTest {
             assertFalse(iter.hasPrevious());
         }
     }
-
-    // === Basic Operations ======================================================
 
     @Nested
     @DisplayName("Basic Operations")
@@ -115,8 +111,6 @@ class ObjectListTest {
         }
     }
 
-    // === Search Operations =====================================================
-
     @Nested
     @DisplayName("Search Operations")
     class SearchOperations {
@@ -167,8 +161,6 @@ class ObjectListTest {
         }
     }
 
-    // === Bulk Operations =======================================================
-
     @Nested
     @DisplayName("Bulk Operations")
     class BulkOperations {
@@ -199,8 +191,6 @@ class ObjectListTest {
             assertArrayEquals(new String[]{"x", "y"}, arr);
         }
     }
-
-    // === Iterator Pool =========================================================
 
     @Nested
     @DisplayName("Iterator Pool")
@@ -270,8 +260,6 @@ class ObjectListTest {
             }
         }
     }
-
-    // === Pre-allocation mode ===================================================
 
     @Nested
     @DisplayName("addPreAllocated")
@@ -365,8 +353,6 @@ class ObjectListTest {
             assertThrows(UnsupportedOperationException.class, () -> list.add(new Counter()));
         }
     }
-
-    // === Edge Cases ============================================================
 
     @Nested
     @DisplayName("Edge Cases")

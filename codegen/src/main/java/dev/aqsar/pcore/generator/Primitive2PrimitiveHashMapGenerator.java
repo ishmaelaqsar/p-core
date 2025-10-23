@@ -12,12 +12,12 @@ public class Primitive2PrimitiveHashMapGenerator {
 
     private static final List<PrimitiveType> TYPES = List.of(
             // Integer types - use sentinel values
-            new IntegerType("int", "Integer", "Int", "Integer.MIN_VALUE", "0", "0", "Integer.MIN_VALUE"),
-            new IntegerType("long", "Long", "Long", "Long.MIN_VALUE", "0L", "0L", "Long.MIN_VALUE"),
+            new IntegerType("int", "Integer", "Int", "Integer.MIN_VALUE"),
+            new IntegerType("long", "Long", "Long", "Long.MIN_VALUE"),
 
             // Floating point types - use state array
-            new FloatingType("float", "Float", "Float", "Float.NaN", "0.0f"),
-            new FloatingType("double", "Double", "Double", "Double.NaN", "0.0"));
+            new FloatingType("float", "Float", "Float", "Float.NaN"),
+            new FloatingType("double", "Double", "Double", "Double.NaN"));
 
     public static void main(final String[] args) throws IOException {
         if (args.length < 1) {
@@ -50,14 +50,12 @@ public class Primitive2PrimitiveHashMapGenerator {
         st.add("primitiveKey", keyType.primitive);
         st.add("boxedKey", keyType.boxed);
         st.add("upperKey", keyType.upper);
-        st.add("nullKey", keyType.nullValue);
 
         // Value type parameters
         st.add("primitiveValue", valueType.primitive);
         st.add("boxedValue", valueType.boxed);
         st.add("upperValue", valueType.upper);
         st.add("nullValue", valueType.nullValue);
-        st.add("defaultValue", valueType.defaultValue);
 
         // Key-specific implementations
         st.add("sentinel_declarations", keyType.getSentinelDeclarations());
@@ -65,6 +63,7 @@ public class Primitive2PrimitiveHashMapGenerator {
         st.add("state_array_init", keyType.getStateArrayInit());
         st.add("clear_state", keyType.getClearState());
         st.add("key_equals", keyType.getEqualsExpression());
+        st.add("key_null", keyType.getNullKeyExpression());
         st.add("is_empty", keyType.isEmpty());
         st.add("is_occupied", keyType.isOccupied());
         st.add("is_empty_or_tombstone", keyType.isEmptyOrTombstone());
@@ -95,14 +94,12 @@ public class Primitive2PrimitiveHashMapGenerator {
         final String boxed;
         final String upper;
         final String nullValue;
-        final String defaultValue;
 
-        PrimitiveType(String primitive, String boxed, String upper, String nullValue, String defaultValue) {
+        PrimitiveType(String primitive, String boxed, String upper, String nullValue) {
             this.primitive = primitive;
             this.boxed = boxed;
             this.upper = upper;
             this.nullValue = nullValue;
-            this.defaultValue = defaultValue;
         }
 
         abstract String getSentinelDeclarations();
@@ -132,48 +129,38 @@ public class Primitive2PrimitiveHashMapGenerator {
         abstract String getStateArrayInitResize();
 
         abstract String wasOccupied();
+
+        abstract String getNullKeyExpression();
     }
 
     private static class IntegerType extends PrimitiveType {
-        private final String emptyKey;
-        private final String tombstoneKey;
+        private final String sentinelKey;
 
-        IntegerType(String primitive,
-                    String boxed,
-                    String upper,
-                    String nullValue,
-                    String defaultValue,
-                    String emptyKey,
-                    String tombstoneKey) {
-            super(primitive, boxed, upper, nullValue, defaultValue);
-            this.emptyKey = emptyKey;
-            this.tombstoneKey = tombstoneKey;
+        IntegerType(String primitive, String boxed, String upper, String nullValue) {
+            super(primitive, boxed, upper, nullValue);
+            this.sentinelKey = nullValue; // reuse nullValue for empty/tombstone
         }
 
         @Override
         String getSentinelDeclarations() {
             return String.format("""
-                                 private static final %s EMPTY_KEY = %s;
-                                 private static final %s TOMBSTONE_KEY = %s;""",
-                                 primitive,
-                                 emptyKey,
-                                 primitive,
-                                 tombstoneKey);
+                                 // Sentinel key used for both empty and tombstone slots
+                                 private static final %s NULL_KEY = %s;""", primitive, sentinelKey);
         }
 
         @Override
         String getStateArrayDeclaration() {
-            return ""; // No state array needed for integers
+            return "// N/A"; // No state array needed for integers
         }
 
         @Override
         String getStateArrayInit() {
-            return "Arrays.fill(keys, EMPTY_KEY)";
+            return "Arrays.fill(keys, NULL_KEY)";
         }
 
         @Override
         String getClearState() {
-            return "Arrays.fill(keys, EMPTY_KEY)";
+            return "Arrays.fill(keys, NULL_KEY)";
         }
 
         @Override
@@ -183,17 +170,17 @@ public class Primitive2PrimitiveHashMapGenerator {
 
         @Override
         String isEmpty() {
-            return "keys[slot] == EMPTY_KEY";
+            return "keys[slot] == NULL_KEY";
         }
 
         @Override
         String isOccupied() {
-            return "keys[slot] != EMPTY_KEY && keys[slot] != TOMBSTONE_KEY";
+            return "keys[slot] != NULL_KEY";
         }
 
         @Override
         String isEmptyOrTombstone() {
-            return "keys[slot] == EMPTY_KEY || keys[slot] == TOMBSTONE_KEY";
+            return "keys[slot] == NULL_KEY";
         }
 
         @Override
@@ -203,7 +190,7 @@ public class Primitive2PrimitiveHashMapGenerator {
 
         @Override
         String markTombstone() {
-            return "keys[slot] = TOMBSTONE_KEY";
+            return "keys[slot] = NULL_KEY";
         }
 
         @Override
@@ -229,19 +216,24 @@ public class Primitive2PrimitiveHashMapGenerator {
 
         @Override
         String getStateArrayInitResize() {
-            return "Arrays.fill(keys, EMPTY_KEY)";
+            return "Arrays.fill(keys, NULL_KEY)";
         }
 
         @Override
         String wasOccupied() {
-            return "oldKeys[i] != EMPTY_KEY && oldKeys[i] != TOMBSTONE_KEY";
+            return "oldKeys[i] != NULL_KEY";
+        }
+
+        @Override
+        String getNullKeyExpression() {
+            return "key == NULL_KEY";
         }
     }
 
     private static class FloatingType extends PrimitiveType {
 
-        FloatingType(String primitive, String boxed, String upper, String nullValue, String defaultValue) {
-            super(primitive, boxed, upper, nullValue, defaultValue);
+        FloatingType(String primitive, String boxed, String upper, String nullValue) {
+            super(primitive, boxed, upper, nullValue);
         }
 
         @Override
@@ -255,7 +247,7 @@ public class Primitive2PrimitiveHashMapGenerator {
 
         @Override
         String getStateArrayDeclaration() {
-            return "private byte[] state";
+            return "private byte[] state;";
         }
 
         @Override
@@ -325,7 +317,7 @@ public class Primitive2PrimitiveHashMapGenerator {
 
         @Override
         String getSaveOldState() {
-            return "final byte[] oldState = state";
+            return "final byte[] oldState = state;";
         }
 
         @Override
@@ -338,6 +330,11 @@ public class Primitive2PrimitiveHashMapGenerator {
         @Override
         String wasOccupied() {
             return "oldState[i] == STATE_OCCUPIED";
+        }
+
+        @Override
+        String getNullKeyExpression() {
+            return "false";
         }
     }
 }

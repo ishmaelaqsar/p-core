@@ -14,17 +14,16 @@ import java.util.Set;
 /**
  * A Map implementation that stores #primitiveKey#-to-#primitiveValue# mappings without boxing to achieve high performance and avoid allocations.
  * Uses open addressing with linear probing for collision resolution.
- *
+ * <p>
  * For floating point keys (float/double):
- * - Uses bitwise equality (Double.doubleToRawLongBits for doubles, Float.floatToRawIntBits for floats)
+ * - Uses bitwise equality (Double.doubleToLongBits for doubles, Float.floatToIntBits for floats)
  * - NaN values are supported and treated as equal to each other
- * - +0.0 and -0.0 are treated as distinct keys (different bit patterns)
- *
+ * - +0.0 and -0.0 are treated as the same key
+ * <p>
  * This class is not thread-safe.
  */
 public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #boxedValue#> {
 
-    public static final #primitiveKey# DEFAULT_NULL_KEY = #nullKey#;
     public static final #primitiveValue# DEFAULT_NULL_VALUE = #nullValue#;
     public static final int DEFAULT_INITIAL_CAPACITY = 16;
     public static final float DEFAULT_LOAD_FACTOR = 0.75f;
@@ -39,18 +38,13 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
     // Hot fields - accessed on every operation (grouped for cache locality)
     private #primitiveKey#[] keys;
     private #primitiveValue#[] values;
-    #state_array_declaration#; // For float/double: byte[] to track empty/tombstone state
+    #state_array_declaration# // For float/double: byte[] to track empty/tombstone state
     private int size = 0;
     private int mask;
     private int threshold;
 
     // Warm fields - accessed frequently but not every operation
-    private final boolean useNullKey;
-    private final boolean useNullValue;
-    private final #primitiveKey# nullKey;
-    private final #primitiveValue# nullValue;
-    private boolean hasNullKey = false;
-    private #primitiveValue# nullKeyValue;
+    public final #primitiveValue# nullValue;
 
     // Cold fields - accessed rarely
     private final float loadFactor;
@@ -61,10 +55,7 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
     private #upperKey#2#upperValue#HashMap(
             final int initialCapacity,
             final float loadFactor,
-            final #primitiveKey# nullKey,
             final #primitiveValue# nullValue,
-            final boolean useNullKey,
-            final boolean useNullValue,
             final boolean enableIteratorPool
     ) {
         int capacity = 1;
@@ -78,10 +69,7 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
         this.loadFactor = loadFactor;
         this.threshold = (int) (capacity * loadFactor);
 
-        this.nullKey = nullKey;
         this.nullValue = nullValue;
-        this.useNullKey = useNullKey;
-        this.useNullValue = useNullValue;
 
         if (enableIteratorPool) {
             this.iteratorPool = new IteratorPoolEntry[ITERATOR_POOL_SIZE];
@@ -99,17 +87,8 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
 
     // ------------------- Primitive Operations -------------------
 
-    public void put#upperKey##upperValue#(final #primitiveKey# key, final #primitiveValue# value) {
-        if (useNullKey && isKeyEqual(key, nullKey)) {
-            if (!hasNullKey) {
-                hasNullKey = true;
-                size++;
-                modCount++;
-            }
-            nullKeyValue = value;
-            return;
-        }
-
+    public void put#upperValue#(final #primitiveKey# key, final #primitiveValue# value) {
+        if (isNullKey(key)) throw new IllegalArgumentException("Null keys are not permitted");
         if (size >= threshold) resize();
 
         final int slot = findSlotForPut(key);
@@ -126,38 +105,23 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
     }
 
     public #primitiveValue# get#upperValue#(final #primitiveKey# key) {
-        if (useNullKey && isKeyEqual(key, nullKey)) {
-            return hasNullKey ? nullKeyValue : (useNullValue ? nullValue : #defaultValue#);
-        }
-
+        if (isNullKey(key)) throw new IllegalArgumentException("Null keys are not permitted");
         final int slot = findSlotForGet(key);
-        if (slot >= 0) {
-            return values[slot];
-        }
-        return useNullValue ? nullValue : #defaultValue#;
+        return slot >= 0 ? values[slot] : nullValue;
     }
 
     public #primitiveValue# getOrDefault#upperValue#(final #primitiveKey# key, final #primitiveValue# defaultValue) {
-        if (useNullKey && isKeyEqual(key, nullKey)) {
-            return hasNullKey ? nullKeyValue : defaultValue;
-        }
-
+        if (isNullKey(key)) throw new IllegalArgumentException("Null keys are not permitted");
         final int slot = findSlotForGet(key);
         return slot >= 0 ? values[slot] : defaultValue;
     }
 
-    public boolean contains#upperKey#(final #primitiveKey# key) {
-        if (useNullKey && isKeyEqual(key, nullKey)) {
-            return hasNullKey;
-        }
+    public boolean contains#upperKey#Key(final #primitiveKey# key) {
+        if (isNullKey(key)) throw new IllegalArgumentException("Null keys are not permitted");
         return findSlotForGet(key) >= 0;
     }
 
-    public boolean contains#upperValue##value_suffix#(final #primitiveValue# value) {
-        if (hasNullKey && isValueEqual(nullKeyValue, value)) {
-            return true;
-        }
-
+    public boolean contains#upperValue#Value(final #primitiveValue# value) {
         final #primitiveKey#[] ks = keys;
         final #primitiveValue#[] vs = values;
         for (int i = 0; i < ks.length; i++) {
@@ -168,37 +132,21 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
         return false;
     }
 
-    public #primitiveValue# remove#upperKey#(final #primitiveKey# key) {
-        if (useNullKey && isKeyEqual(key, nullKey)) {
-            if (hasNullKey) {
-                hasNullKey = false;
-                size--;
-                modCount++;
-                final #primitiveValue# old = nullKeyValue;
-                nullKeyValue = useNullValue ? nullValue : #defaultValue#;
-                return old;
-            }
-            return useNullValue ? nullValue : #defaultValue#;
-        }
-
+    public #primitiveValue# remove#upperValue#(final #primitiveKey# key) {
         final int slot = findSlotForGet(key);
         if (slot >= 0) {
             final #primitiveValue# oldValue = values[slot];
             markSlotTombstone(slot);
-            values[slot] = useNullValue ? nullValue : #defaultValue#;
+            values[slot] = nullValue;
             size--;
             modCount++;
             return oldValue;
         }
-        return useNullValue ? nullValue : #defaultValue#;
+        return nullValue;
     }
 
     public void forEach#upperKey##upperValue#(final #upperKey##upperValue#Consumer action) {
         Objects.requireNonNull(action);
-
-        if (hasNullKey) {
-            action.accept(nullKey, nullKeyValue);
-        }
 
         final #primitiveKey#[] ks = keys;
         final #primitiveValue#[] vs = values;
@@ -209,12 +157,159 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
         }
     }
 
+    public boolean replace#upperValue#(final #primitiveKey# key, final #primitiveValue# oldValue, final #primitiveValue# newValue) {
+        final int slot = findSlotForGet(key);
+        if (slot >= 0 && isValueEqual(values[slot], oldValue)) {
+            values[slot] = newValue;
+            modCount++;
+            return true;
+        }
+        return false;
+    }
+
+    public #primitiveValue# replace#upperValue#(final #primitiveKey# key, final #primitiveValue# newValue) {
+        final int slot = findSlotForGet(key);
+        if (slot >= 0) {
+            final #primitiveValue# oldValue = values[slot];
+            values[slot] = newValue;
+            modCount++;
+            return oldValue;
+        }
+        return nullValue;
+    }
+
+    public #primitiveValue# compute#upperValue#(
+            final #primitiveKey# key,
+            final #upperKey##upperValue#RemappingFunction remappingFunction
+    ) {
+        Objects.requireNonNull(remappingFunction);
+
+        final int slot = findSlotForGet(key);
+        final boolean present = slot >= 0;
+        final #primitiveValue# oldValue = present ? values[slot] : nullValue;
+        final #primitiveValue# newValue = remappingFunction.apply(key, present ? oldValue : nullValue);
+
+        if (isValueEqual(newValue, nullValue)) {
+            if (present) {
+                markSlotTombstone(slot);
+                values[slot] = nullValue;
+                size--;
+                modCount++;
+            }
+            return nullValue;
+        } else {
+            if (size >= threshold) resize();
+            final int putSlot = present ? slot : findSlotForPut(key);
+            if (!present) size++;
+            keys[putSlot] = key;
+            values[putSlot] = newValue;
+            markSlotOccupied(putSlot);
+            modCount++;
+            return newValue;
+        }
+    }
+
+    public #primitiveValue# computeIfAbsent#upperValue#(
+            final #primitiveKey# key,
+            final #upperKey#Function mappingFunction
+    ) {
+        Objects.requireNonNull(mappingFunction);
+
+        final int slot = findSlotForGet(key);
+        if (slot >= 0) return values[slot];
+
+        final #primitiveValue# newValue = mappingFunction.apply(key);
+        if (isValueEqual(newValue, nullValue)) return nullValue;
+        if (size >= threshold) resize();
+
+        final int putSlot = findSlotForPut(key);
+        keys[putSlot] = key;
+        values[putSlot] = newValue;
+        markSlotOccupied(putSlot);
+        size++;
+        modCount++;
+        return newValue;
+    }
+
+    public #primitiveValue# computeIfPresent#upperValue#(
+            final #primitiveKey# key,
+            final #upperKey##upperValue#RemappingFunction remappingFunction
+    ) {
+        Objects.requireNonNull(remappingFunction);
+
+        final int slot = findSlotForGet(key);
+        if (slot < 0) return nullValue;
+
+        final #primitiveValue# oldValue = values[slot];
+        final #primitiveValue# newValue = remappingFunction.apply(key, oldValue);
+
+        if (isValueEqual(newValue, nullValue)) {
+            markSlotTombstone(slot);
+            values[slot] = nullValue;
+            size--;
+            modCount++;
+            return nullValue;
+        } else {
+            values[slot] = newValue;
+            modCount++;
+            return newValue;
+        }
+    }
+
+    public #primitiveValue# merge#upperValue#(
+            final #primitiveKey# key,
+            final #primitiveValue# value,
+            final #upperValue##upperValue#MergeFunction remappingFunction
+    ) {
+        Objects.requireNonNull(remappingFunction);
+
+        final int slot = findSlotForGet(key);
+        if (slot < 0) {
+            if (isValueEqual(value, nullValue)) return nullValue;
+            put#upperValue#(key, value);
+            return value;
+        } else {
+            final #primitiveValue# oldValue = values[slot];
+            final #primitiveValue# newValue = remappingFunction.apply(oldValue, value);
+            if (isValueEqual(newValue, nullValue)) {
+                markSlotTombstone(slot);
+                values[slot] = nullValue;
+                size--;
+                modCount++;
+                return nullValue;
+            } else {
+                values[slot] = newValue;
+                modCount++;
+                return newValue;
+            }
+        }
+    }
+
     @FunctionalInterface
     public interface #upperKey##upperValue#Consumer {
         void accept(#primitiveKey# key, #primitiveValue# value);
     }
 
+    @FunctionalInterface
+    public interface #upperKey##upperValue#RemappingFunction {
+        #primitiveValue# apply(#primitiveKey# key, #primitiveValue# oldValue);
+    }
+
+    @FunctionalInterface
+    public interface #upperKey#Function {
+        #primitiveValue# apply(#primitiveKey# key);
+    }
+
+    @FunctionalInterface
+    public interface #upperValue##upperValue#MergeFunction {
+        #primitiveValue# apply(#primitiveValue# oldValue, #primitiveValue# value);
+    }
+
     // ------------------- Helper Methods for State Management -------------------
+
+    private boolean isNullKey(final #primitiveKey# key) {
+        return #key_null#;
+    }
 
     private boolean isKeyEqual(final #primitiveKey# v1, final #primitiveKey# v2) {
         return #key_equals#;
@@ -248,58 +343,106 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
 
     @Override
     public #boxedValue# put(final #boxedKey# key, final #boxedValue# value) {
-        final #primitiveKey# k = useNullKey && key == null ? nullKey : key;
-        final #primitiveValue# v = useNullValue && value == null ? nullValue : value;
-        final #primitiveValue# oldValue = get#upperValue#(k);
-        put#upperKey##upperValue#(k, v);
-        return useNullValue && isValueEqual(oldValue, nullValue) ? null : oldValue;
+        if (key == null || value == null) {
+            throw new NullPointerException("Null keys and values are not supported");
+        }
+        final #primitiveValue# oldValue = get#upperValue#(key);
+        put#upperValue#(key, value);
+        return isValueEqual(oldValue, nullValue) ? null : oldValue;
     }
 
     @Override
     public #boxedValue# get(final Object key) {
-        if (useNullKey && key == null) {
-            return hasNullKey ? (useNullValue && isValueEqual(nullKeyValue, nullValue) ? null : nullKeyValue) : null;
-        }
         if (!(key instanceof #boxedKey#)) return null;
-
-        final #primitiveKey# k = (#boxedKey#) key;
-        final #primitiveValue# v = get#upperValue#(k);
-        return useNullValue && isValueEqual(v, nullValue) ? null : v;
+        final #primitiveValue# v = get#upperValue#((#boxedKey#) key);
+        return isValueEqual(v, nullValue) ? null : v;
     }
 
     @Override
     public boolean containsKey(final Object key) {
-        if (useNullKey && key == null) {
-            return hasNullKey;
-        }
         if (!(key instanceof #boxedKey#)) return false;
-
-        final #primitiveKey# k = (#boxedKey#) key;
-        return contains#upperKey#(k);
+        return contains#upperKey#Key((#boxedKey#) key);
     }
 
     @Override
     public boolean containsValue(final Object value) {
-        if (useNullValue && value == null) {
-            return contains#upperValue##value_suffix#(nullValue);
-        }
         if (!(value instanceof #boxedValue#)) return false;
-
-        final #primitiveValue# v = (#boxedValue#) value;
-        return contains#upperValue##value_suffix#(v);
+        return contains#upperValue#Value((#boxedValue#) value);
     }
 
     @Override
     public #boxedValue# remove(final Object key) {
-        if (useNullKey && key == null) {
-            final #primitiveValue# v = remove#upperKey#(nullKey);
-            return useNullValue && isValueEqual(v, nullValue) ? null : v;
-        }
         if (!(key instanceof #boxedKey#)) return null;
+        final #primitiveValue# v = remove#upperValue#((#boxedKey#) key);
+        return isValueEqual(v, nullValue) ? null : v;
+    }
 
-        final #primitiveKey# k = (#boxedKey#) key;
-        final #primitiveValue# v = remove#upperKey#(k);
-        return useNullValue && isValueEqual(v, nullValue) ? null : v;
+    @Override
+    public #boxedValue# replace(final #boxedKey# key, final #boxedValue# value) {
+        if (key == null || value == null) return null;
+        final #primitiveValue# old = replace#upperValue#(key, value);
+        return isValueEqual(old, nullValue) ? null : old;
+    }
+
+    @Override
+    public boolean replace(final #boxedKey# key, final #boxedValue# oldValue, final #boxedValue# newValue) {
+        if (key == null || oldValue == null || newValue == null) return false;
+        return replace#upperValue#(key, oldValue, newValue);
+    }
+
+    @Override
+    public #boxedValue# compute(
+            final #boxedKey# key,
+            final java.util.function.BiFunction<? super #boxedKey#, ? super #boxedValue#, ? extends #boxedValue#> remappingFunction
+    ) {
+        if (key == null || remappingFunction == null) return null;
+        final #primitiveValue# result = compute#upperValue#(key, (k, v) -> {
+            final #boxedValue# boxedOld = isValueEqual(v, nullValue) ? null : v;
+            final #boxedValue# boxedNew = remappingFunction.apply(k, boxedOld);
+            return boxedNew == null ? nullValue : boxedNew;
+        });
+        return isValueEqual(result, nullValue) ? null : result;
+    }
+
+    @Override
+    public #boxedValue# computeIfAbsent(
+            final #boxedKey# key,
+            final java.util.function.Function<? super #boxedKey#, ? extends #boxedValue#> mappingFunction
+    ) {
+        if (key == null || mappingFunction == null) return null;
+        final #primitiveValue# result = computeIfAbsent#upperValue#(key, k -> {
+            final #boxedValue# boxed = mappingFunction.apply(k);
+            return boxed == null ? nullValue : boxed;
+        });
+        return isValueEqual(result, nullValue) ? null : result;
+    }
+
+    @Override
+    public #boxedValue# computeIfPresent(
+            final #boxedKey# key,
+            final java.util.function.BiFunction<? super #boxedKey#, ? super #boxedValue#, ? extends #boxedValue#> remappingFunction
+    ) {
+        if (key == null || remappingFunction == null) return null;
+        final #primitiveValue# result = computeIfPresent#upperValue#(key, (k, v) -> {
+            final #boxedValue# boxedOld = isValueEqual(v, nullValue) ? null : v;
+            final #boxedValue# boxedNew = remappingFunction.apply(k, boxedOld);
+            return boxedNew == null ? nullValue : boxedNew;
+        });
+        return isValueEqual(result, nullValue) ? null : result;
+    }
+
+    @Override
+    public #boxedValue# merge(
+            final #boxedKey# key,
+            final #boxedValue# value,
+            final java.util.function.BiFunction<? super #boxedValue#, ? super #boxedValue#, ? extends #boxedValue#> remappingFunction
+    ) {
+        if (key == null || value == null || remappingFunction == null) return null;
+        final #primitiveValue# result = merge#upperValue#(key, value, (v1, v2) -> {
+            final #boxedValue# boxed = remappingFunction.apply(v1, v2);
+            return boxed == null ? nullValue : boxed;
+        });
+        return isValueEqual(result, nullValue) ? null : result;
     }
 
     @Override
@@ -307,7 +450,6 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
         if (size > 0) {
             #clear_state#;
             size = 0;
-            hasNullKey = false;
             modCount++;
         }
     }
@@ -398,8 +540,8 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
 
         private final int poolIndex;
         private int cursor;
-        private boolean visitedNullKey;
         private int expectedModCount;
+        private int lastReturnedIndex = -1;
 
         // More padding to ensure this iterator doesn't share cache lines
         private long p8, p9, p10, p11, p12, p13, p14;
@@ -411,13 +553,10 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
 
         void reset() {
             this.cursor = 0;
-            this.visitedNullKey = false;
             this.expectedModCount = modCount;
         }
 
         public boolean hasNext() {
-            if (hasNullKey && !visitedNullKey) return true;
-
             while (cursor < keys.length) {
                 if (isSlotOccupied(cursor)) {
                     return true;
@@ -432,13 +571,9 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
                 throw new ConcurrentModificationException();
             }
 
-            if (hasNullKey && !visitedNullKey) {
-                visitedNullKey = true;
-                return nullKey;
-            }
-
             while (cursor < keys.length) {
                 if (isSlotOccupied(cursor)) {
+                    lastReturnedIndex = cursor;
                     return keys[cursor++];
                 }
                 cursor++;
@@ -451,13 +586,9 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
                 throw new ConcurrentModificationException();
             }
 
-            if (hasNullKey && !visitedNullKey) {
-                visitedNullKey = true;
-                return nullKeyValue;
-            }
-
             while (cursor < keys.length) {
                 if (isSlotOccupied(cursor)) {
+                    lastReturnedIndex = cursor;
                     return values[cursor++];
                 }
                 cursor++;
@@ -465,13 +596,21 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
             throw new NoSuchElementException();
         }
 
+        public void remove() {
+            if (lastReturnedIndex < 0) {
+                throw new IllegalStateException("next() has not been called or remove() already called");
+            }
+
+            markSlotTombstone(lastReturnedIndex);
+            values[lastReturnedIndex] = nullValue;
+            size--;
+            modCount++;
+            expectedModCount = modCount;
+            lastReturnedIndex = -1;
+        }
+
         public void forEachRemaining(final #upperKey##upperValue#Consumer action) {
             Objects.requireNonNull(action);
-
-            if (hasNullKey && !visitedNullKey) {
-                visitedNullKey = true;
-                action.accept(nullKey, nullKeyValue);
-            }
 
             final #primitiveKey#[] ks = keys;
             final #primitiveValue#[] vs = values;
@@ -493,13 +632,10 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
 
     private abstract class BaseIterator<T> implements Iterator<T> {
         int cursor = 0;
-        boolean visitedNullKey = false;
         int expectedModCount = modCount;
 
         @Override
         public boolean hasNext() {
-            if (hasNullKey && !visitedNullKey) return true;
-
             while (cursor < keys.length) {
                 if (isSlotOccupied(cursor)) {
                     return true;
@@ -521,15 +657,9 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
         public #boxedKey# next() {
             checkModCount();
 
-            if (hasNullKey && !visitedNullKey) {
-                visitedNullKey = true;
-                return useNullKey && isKeyEqual(nullKey, #upperKey#2#upperValue#HashMap.this.nullKey) ? null : nullKey;
-            }
-
             while (cursor < keys.length) {
                 if (isSlotOccupied(cursor)) {
-                    final #primitiveKey# key = keys[cursor++];
-                    return useNullKey && isKeyEqual(key, #upperKey#2#upperValue#HashMap.this.nullKey) ? null : key;
+                    return keys[cursor++];
                 }
                 cursor++;
             }
@@ -542,16 +672,10 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
         public #boxedValue# next() {
             checkModCount();
 
-            if (hasNullKey && !visitedNullKey) {
-                visitedNullKey = true;
-                final #primitiveValue# v = nullKeyValue;
-                return useNullValue && isValueEqual(v, nullValue) ? null : v;
-            }
-
             while (cursor < keys.length) {
                 if (isSlotOccupied(cursor)) {
                     final #primitiveValue# value = values[cursor++];
-                    return useNullValue && isValueEqual(value, nullValue) ? null : value;
+                    return isValueEqual(value, nullValue) ? null : value;
                 }
                 cursor++;
             }
@@ -564,23 +688,12 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
         public Entry<#boxedKey#, #boxedValue#> next() {
             checkModCount();
 
-            if (hasNullKey && !visitedNullKey) {
-                visitedNullKey = true;
-                return new SimpleEntry<>(
-                    useNullKey && isKeyEqual(nullKey, #upperKey#2#upperValue#HashMap.this.nullKey) ? null : nullKey,
-                    useNullValue && isValueEqual(nullKeyValue, nullValue) ? null : nullKeyValue
-                );
-            }
-
             while (cursor < keys.length) {
                 if (isSlotOccupied(cursor)) {
                     final #primitiveKey# key = keys[cursor];
                     final #primitiveValue# value = values[cursor];
                     cursor++;
-                    return new SimpleEntry<>(
-                        useNullKey && isKeyEqual(key, #upperKey#2#upperValue#HashMap.this.nullKey) ? null : key,
-                        useNullValue && isValueEqual(value, nullValue) ? null : value
-                    );
+                    return new SimpleEntry<>(key, isValueEqual(value, nullValue) ? null : value);
                 }
                 cursor++;
             }
@@ -658,7 +771,7 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
 
         mask = newCapacity - 1;
         threshold = (int) (newCapacity * loadFactor);
-        size = hasNullKey ? 1 : 0;
+        size = 0;
 
         // Rehash all entries
         for (int i = 0; i < oldKeys.length; i++) {
@@ -677,10 +790,7 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
     public static class Builder {
         private int initialCapacity = DEFAULT_INITIAL_CAPACITY;
         private float loadFactor = DEFAULT_LOAD_FACTOR;
-        private #primitiveKey# nullKey = DEFAULT_NULL_KEY;
         private #primitiveValue# nullValue = DEFAULT_NULL_VALUE;
-        private boolean useNullKey = true;
-        private boolean useNullValue = true;
         private boolean enableIteratorPool = true;
 
         public Builder initialCapacity(final int initialCapacity) {
@@ -693,25 +803,8 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
             return this;
         }
 
-        public Builder nullKey(final #primitiveKey# nullKey) {
-            this.nullKey = nullKey;
-            this.useNullKey = true;
-            return this;
-        }
-
         public Builder nullValue(final #primitiveValue# nullValue) {
             this.nullValue = nullValue;
-            this.useNullValue = true;
-            return this;
-        }
-
-        public Builder disableNullKey() {
-            this.useNullKey = false;
-            return this;
-        }
-
-        public Builder disableNullValue() {
-            this.useNullValue = false;
             return this;
         }
 
@@ -722,8 +815,7 @@ public final class #upperKey#2#upperValue#HashMap implements Map<#boxedKey#, #bo
 
         public #upperKey#2#upperValue#HashMap build() {
             return new #upperKey#2#upperValue#HashMap(
-                initialCapacity, loadFactor, nullKey, nullValue,
-                useNullKey, useNullValue, enableIteratorPool
+                initialCapacity, loadFactor, nullValue, enableIteratorPool
             );
         }
     }
