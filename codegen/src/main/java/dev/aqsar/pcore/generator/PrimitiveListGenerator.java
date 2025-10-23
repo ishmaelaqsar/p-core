@@ -18,13 +18,13 @@ public class PrimitiveListGenerator {
 
     public static void main(final String[] args)
     throws IOException {
-        if (args.length < 2) {
-            System.err.println("Usage: PrimitiveListGenerator <output-dir> <template-file>");
+        if (args.length < 1) {
+            System.err.println("Usage: PrimitiveListGenerator <output-dir>");
             System.exit(1);
         }
 
         final Path outputDir = Paths.get(args[0]);
-        final Path templatePath = Paths.get("src/main/templates").resolve(args[1]);
+        final Path templatePath = Paths.get("src/main/templates/PrimitiveList.st");
         final String templateContent = Files.readString(templatePath);
 
         final Path packageDir = outputDir.resolve("dev/aqsar/pcore/collections");

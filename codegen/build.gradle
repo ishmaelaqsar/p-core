@@ -17,24 +17,40 @@ tasks.register('generatePrimitiveLists', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'dev.aqsar.pcore.generator.PrimitiveListGenerator'
 
-    args = [
-            generatedSourcesDir.absolutePath,
-            "$projectDir/src/main/templates/PrimitiveList.st"
-    ]
+    args = [generatedSourcesDir.absolutePath]
 
     outputs.dir(generatedSourcesDir)
 
     doFirst {
-        if (generatedSourcesDir.exists()) {
-            generatedSourcesDir.deleteDir()
+        if (!generatedSourcesDir.exists()) {
+            generatedSourcesDir.mkdirs()
         }
-        generatedSourcesDir.mkdirs()
     }
 }
 
+tasks.register('generatePrimitive2PrimitiveHashMaps', JavaExec) {
+    group = 'build'
+    description = 'Generates primitive to primitive hashmap classes for p-core.'
+
+    dependsOn tasks.named('compileJava')
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'dev.aqsar.pcore.generator.Primitive2PrimitiveHashMapGenerator'
+
+    args = [generatedSourcesDir.absolutePath]
+
+    outputs.dir(generatedSourcesDir)
+
+    doFirst {
+        if (!generatedSourcesDir.exists()) {
+            generatedSourcesDir.mkdirs()
+        }
+    }
+}
 
 // Make the :p-core compilation depend on generated sources
 project(':p-core').sourceSets.main.java.srcDir(generatedSourcesDir)
 project(':p-core').tasks.named('compileJava').configure {
     dependsOn tasks.named('generatePrimitiveLists')
+    dependsOn tasks.named('generatePrimitive2PrimitiveHashMaps')
 }

@@ -1,20 +1,30 @@
 package dev.aqsar.pcore.annotations;
 
-import jakarta.annotation.Nonnull;
-
+import javax.annotation.Nonnull;
+import javax.annotation.meta.TypeQualifierDefault;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.*;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.lang.annotation.RetentionPolicy.CLASS;
 
 /**
- * Marks all methods, parameters, and fields in a package as Nonnull by default.
+ * Marks all method returns, parameters, fields, and locals in a package as Nonnull
+ * unless explicitly overridden by @Nullable.
  */
 @Documented
+@Retention(CLASS)
+@Target({PACKAGE, TYPE})
+@TypeQualifierDefault({
+        FIELD,               // Fields/Instance Variables
+        METHOD,              // Method Return Values
+        PARAMETER,           // Method/Constructor Parameters
+        LOCAL_VARIABLE,      // Local variables inside methods (recommended)
+        CONSTRUCTOR,         // Constructor Return Type (The object itself)
+        TYPE_PARAMETER,      // Generic Type Parameters (e.g., List<String> -> List<@Nonnull String>)
+        RECORD_COMPONENT     // Java 16+ Record Components
+})
 @Nonnull
-@Retention(RUNTIME)
-@Target({PACKAGE, TYPE, FIELD, METHOD, PARAMETER, LOCAL_VARIABLE, CONSTRUCTOR, RECORD_COMPONENT})
 public @interface NonNullByDefault {
 }

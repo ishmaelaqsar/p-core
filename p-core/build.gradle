@@ -3,13 +3,16 @@ plugins {
 }
 
 dependencies {
-    implementation "jakarta.annotation:jakarta.annotation-api:${jakartaAnnotationApiVersion}"
+    implementation("com.github.spotbugs:spotbugs-annotations:${spotbugsAnnotationsVersion}")
     implementation project(':p-core-codegen')
-    implementation "org.agrona:agrona:${agronaVersion}"
+
+    testImplementation("org.junit.jupiter:junit-jupiter:${junitVersion}")
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 sourceSets.main.java.srcDir(project(':p-core-codegen').layout.buildDirectory.dir('generated-sources/java'))
 
 tasks.named('compileJava') {
     dependsOn project(':p-core-codegen').tasks.named('generatePrimitiveLists')
+    dependsOn project(':p-core-codegen').tasks.named('generatePrimitive2PrimitiveHashMaps')
 }

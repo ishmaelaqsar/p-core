@@ -33,11 +33,9 @@ public class PrimitiveListBenchmarks {
     private int[] intArray;
     private long[] longArray;
 
-    private Random random;
-
     @Setup(Level.Trial)
     public void setup() {
-        random = new Random(42);
+        Random random = new Random(42);
 
         // Setup int data
         intArray = new int[size];
@@ -131,11 +129,10 @@ public class PrimitiveListBenchmarks {
         private ArrayList<Long> boxedLongList;
 
         private int[] accessPattern;
-        private Random random;
 
         @Setup(Level.Trial)
         public void setup() {
-            random = new Random(42);
+            Random random = new Random(42);
 
             // Create access pattern
             accessPattern = new int[1000];

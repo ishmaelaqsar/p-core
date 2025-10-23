@@ -14,6 +14,7 @@ dependencies {
 // Ensure benchmarks compile after codegen
 tasks.named('compileJava') {
     dependsOn project(':p-core-codegen').tasks.named('generatePrimitiveLists')
+    dependsOn project(':p-core-codegen').tasks.named('generatePrimitive2PrimitiveHashMaps')
 }
 
 jmh {
