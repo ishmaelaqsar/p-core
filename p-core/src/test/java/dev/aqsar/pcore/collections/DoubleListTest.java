@@ -33,9 +33,9 @@ class DoubleListTest {
         @Test
         @DisplayName("should add elements")
         void testAdd() {
-            list.addDouble(10);
-            list.addDouble(20);
-            list.addDouble(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
 
             assertEquals(3, list.size());
             assertEquals(10, list.getDouble(0));
@@ -57,8 +57,8 @@ class DoubleListTest {
         @Test
         @DisplayName("should get elements")
         void testGet() {
-            list.addDouble(100);
-            list.addDouble(200);
+            list.add(100);
+            list.add(200);
 
             assertEquals(100, list.getDouble(0));
             assertEquals(200, list.getDouble(1));
@@ -67,7 +67,7 @@ class DoubleListTest {
         @Test
         @DisplayName("should throw on invalid index for get")
         void testGetInvalidIndex() {
-            list.addDouble(1);
+            list.add(1);
             assertThrows(IndexOutOfBoundsException.class, () -> list.getDouble(-1));
             assertThrows(IndexOutOfBoundsException.class, () -> list.getDouble(1));
             assertThrows(IndexOutOfBoundsException.class, () -> list.getDouble(100));
@@ -76,8 +76,8 @@ class DoubleListTest {
         @Test
         @DisplayName("should set elements")
         void testSet() {
-            list.addDouble(50);
-            double old = list.setDouble(0, 75d);
+            list.add(50);
+            double old = list.set(0, 75d);
 
             assertEquals(50, old);
             assertEquals(75, list.getDouble(0));
@@ -96,17 +96,17 @@ class DoubleListTest {
         @Test
         @DisplayName("should throw on invalid index for set")
         void testSetInvalidIndex() {
-            list.addDouble(1);
-            assertThrows(IndexOutOfBoundsException.class, () -> list.setDouble(-1, 0));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.setDouble(1, 0));
+            list.add(1);
+            assertThrows(IndexOutOfBoundsException.class, () -> list.set(-1, 0));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.set(1, 0));
         }
 
         @Test
         @DisplayName("should remove elements")
         void testRemove() {
-            list.addDouble(10);
-            list.addDouble(20);
-            list.addDouble(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
 
             double removed = list.remove(1);
 
@@ -119,8 +119,8 @@ class DoubleListTest {
         @Test
         @DisplayName("should remove last element")
         void testRemoveLast() {
-            list.addDouble(10);
-            list.addDouble(20);
+            list.add(10);
+            list.add(20);
 
             list.remove(1);
 
@@ -131,9 +131,9 @@ class DoubleListTest {
         @Test
         @DisplayName("should remove first element")
         void testRemoveFirst() {
-            list.addDouble(10);
-            list.addDouble(20);
-            list.addDouble(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
 
             list.remove(0);
 
@@ -145,9 +145,9 @@ class DoubleListTest {
         @Test
         @DisplayName("should clear list")
         void testClear() {
-            list.addDouble(1);
-            list.addDouble(2);
-            list.addDouble(3);
+            list.add(1);
+            list.add(2);
+            list.add(3);
 
             list.clear();
 
@@ -170,21 +170,21 @@ class DoubleListTest {
         @Test
         @DisplayName("should find element")
         void testIndexOf() {
-            list.addDouble(100);
-            list.addDouble(200);
-            list.addDouble(300);
+            list.add(100);
+            list.add(200);
+            list.add(300);
 
-            assertEquals(0, list.indexOfDouble(100));
-            assertEquals(1, list.indexOfDouble(200));
-            assertEquals(2, list.indexOfDouble(300));
-            assertEquals(-1, list.indexOfDouble(999));
+            assertEquals(0, list.indexOf(100));
+            assertEquals(1, list.indexOf(200));
+            assertEquals(2, list.indexOf(300));
+            assertEquals(-1, list.indexOf(999));
         }
 
         @Test
         @DisplayName("should find boxed element")
         void testIndexOfBoxed() {
-            list.addDouble(100);
-            list.addDouble(200);
+            list.add(100);
+            list.add(200);
 
             assertEquals(0, list.indexOf(100d));
             assertEquals(1, list.indexOf(200d));
@@ -194,7 +194,7 @@ class DoubleListTest {
         @Test
         @DisplayName("should return -1 for wrong type in indexOf")
         void testIndexOfWrongType() {
-            list.addDouble(100);
+            list.add(100);
 
             assertEquals(-1, list.indexOf("not a number"));
             assertEquals(-1, list.indexOf(new Object()));
@@ -203,12 +203,12 @@ class DoubleListTest {
         @Test
         @DisplayName("should test contains")
         void testContains() {
-            list.addDouble(50);
-            list.addDouble(100);
+            list.add(50);
+            list.add(100);
 
-            assertTrue(list.containsDouble(50));
+            assertTrue(list.contains(50));
             assertTrue(list.contains(100d));
-            assertFalse(list.containsDouble(150));
+            assertFalse(list.contains(150));
             assertFalse(list.contains(999d));
         }
 
@@ -217,24 +217,24 @@ class DoubleListTest {
         void testLargeListSearch() {
             // Add more than 8 elements to test unrolled loop
             for (int i = 0; i < 20; i++) {
-                list.addDouble((i * 10));
+                list.add((i * 10));
             }
 
-            assertEquals(0, list.indexOfDouble(0));
-            assertEquals(10, list.indexOfDouble(100));
-            assertEquals(19, list.indexOfDouble(190));
-            assertEquals(-1, list.indexOfDouble(200));
+            assertEquals(0, list.indexOf(0));
+            assertEquals(10, list.indexOf(100));
+            assertEquals(19, list.indexOf(190));
+            assertEquals(-1, list.indexOf(200));
         }
 
         @Test
         @DisplayName("should find first occurrence")
         void testIndexOfFirstOccurrence() {
-            list.addDouble(10);
-            list.addDouble(20);
-            list.addDouble(10);
-            list.addDouble(30);
+            list.add(10);
+            list.add(20);
+            list.add(10);
+            list.add(30);
 
-            assertEquals(0, list.indexOfDouble(10));
+            assertEquals(0, list.indexOf(10));
         }
     }
 
@@ -253,7 +253,7 @@ class DoubleListTest {
         @DisplayName("should add all from array")
         void testAddAllArray() {
             double[] values = {1, 2, 3, 4};
-            list.addAllDoubles(values);
+            list.addAll(values);
 
             assertEquals(4, list.size());
             assertEquals(1, list.getDouble(0));
@@ -264,7 +264,7 @@ class DoubleListTest {
         @DisplayName("should add all from array with offset")
         void testAddAllArrayWithOffset() {
             double[] values = {10, 20, 30, 40, 50};
-            list.addAllDoubles(values, 1, 3);
+            list.addAll(values, 1, 3);
 
             assertEquals(3, list.size());
             assertEquals(20, list.getDouble(0));
@@ -276,7 +276,7 @@ class DoubleListTest {
         @DisplayName("should handle empty addAll")
         void testAddAllEmpty() {
             double[] empty = {};
-            list.addAllDoubles(empty);
+            list.addAll(empty);
             assertEquals(0, list.size());
         }
 
@@ -284,7 +284,7 @@ class DoubleListTest {
         @DisplayName("should handle zero-length addAll")
         void testAddAllZeroLength() {
             double[] values = {1, 2, 3};
-            list.addAllDoubles(values, 1, 0);
+            list.addAll(values, 1, 0);
             assertEquals(0, list.size());
         }
 
@@ -293,17 +293,17 @@ class DoubleListTest {
         void testAddAllInvalidRange() {
             double[] values = {1, 2, 3};
 
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllDoubles(values, -1, 2));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllDoubles(values, 0, 10));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllDoubles(values, 2, 5));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAll(values, -1, 2));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAll(values, 0, 10));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAll(values, 2, 5));
         }
 
         @Test
         @DisplayName("should convert to array")
         void testToArray() {
-            list.addDouble(111);
-            list.addDouble(222);
-            list.addDouble(333);
+            list.add(111);
+            list.add(222);
+            list.add(333);
 
             double[] array = list.toDoubleArray();
 
@@ -316,7 +316,7 @@ class DoubleListTest {
         @Test
         @DisplayName("should return independent array copy")
         void testToArrayIndependent() {
-            list.addDouble(10);
+            list.add(10);
 
             double[] array = list.toDoubleArray();
             array[0] = 999;
@@ -382,7 +382,7 @@ class DoubleListTest {
             list.add(20d);
 
             assertEquals(1, list.indexOf(null));
-            assertEquals(1, list.indexOfDouble(-999));
+            assertEquals(1, list.indexOf(-999));
         }
     }
 
@@ -396,7 +396,7 @@ class DoubleListTest {
             DoubleList list = DoubleList.builder().initialCapacity(2).build();
 
             for (int i = 0; i < 100; i++) {
-                list.addDouble(i);
+                list.add(i);
             }
 
             assertEquals(100, list.size());
@@ -411,7 +411,7 @@ class DoubleListTest {
             DoubleList list = DoubleList.builder().initialCapacity(100).build();
 
             for (int i = 0; i < 50; i++) {
-                list.addDouble(i);
+                list.add(i);
             }
 
             assertEquals(50, list.size());
@@ -422,7 +422,7 @@ class DoubleListTest {
         void testMinimumCapacity() {
             DoubleList list = DoubleList.builder().initialCapacity(0).build();
 
-            list.addDouble(42);
+            list.add(42);
             assertEquals(1, list.size());
             assertEquals(42, list.getDouble(0));
         }
@@ -435,7 +435,7 @@ class DoubleListTest {
             list.ensureCapacity(1000);
 
             for (int i = 0; i < 1000; i++) {
-                list.addDouble(i);
+                list.add(i);
             }
 
             assertEquals(1000, list.size());
@@ -448,7 +448,7 @@ class DoubleListTest {
 
             // Should use 1.5x growth instead of 2x
             for (int i = 0; i < 100; i++) {
-                list.addDouble(i);
+                list.add(i);
             }
 
             assertEquals(100, list.size());
@@ -464,9 +464,9 @@ class DoubleListTest {
         @BeforeEach
         void setUp() {
             list = DoubleList.builder().build();
-            list.addDouble(10);
-            list.addDouble(20);
-            list.addDouble(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
         }
 
         @Test
@@ -487,9 +487,9 @@ class DoubleListTest {
         void testIterateForward() {
             try (DoubleList.DoubleListIterator iter = list.borrowIterator()) {
                 assertTrue(iter.hasNext());
-                assertEquals(10, iter.nextDouble());
-                assertEquals(20, iter.nextDouble());
-                assertEquals(30, iter.nextDouble());
+                assertEquals(10, iter.next());
+                assertEquals(20, iter.next());
+                assertEquals(30, iter.next());
                 assertFalse(iter.hasNext());
             }
         }
@@ -499,9 +499,9 @@ class DoubleListTest {
         void testIterateBackward() {
             try (DoubleList.DoubleListIterator iter = list.borrowIterator(3)) {
                 assertTrue(iter.hasPrevious());
-                assertEquals(30, iter.previousDouble());
-                assertEquals(20, iter.previousDouble());
-                assertEquals(10, iter.previousDouble());
+                assertEquals(30, iter.previous());
+                assertEquals(20, iter.previous());
+                assertEquals(10, iter.previous());
                 assertFalse(iter.hasPrevious());
             }
         }
@@ -510,8 +510,8 @@ class DoubleListTest {
         @DisplayName("should set during iteration")
         void testIteratorSet() {
             try (DoubleList.DoubleListIterator iter = list.borrowIterator()) {
-                iter.nextDouble();
-                iter.setDouble(99);
+                iter.next();
+                iter.set(99);
             }
 
             assertEquals(99, list.getDouble(0));
@@ -521,7 +521,7 @@ class DoubleListTest {
         @DisplayName("should throw when setting without next/previous")
         void testIteratorSetWithoutMoving() {
             try (DoubleList.DoubleListIterator iter = list.borrowIterator()) {
-                assertThrows(IllegalStateException.class, () -> iter.setDouble(0));
+                assertThrows(IllegalStateException.class, () -> iter.set(0));
             }
         }
 
@@ -548,7 +548,7 @@ class DoubleListTest {
 
             try (DoubleList.DoubleListIterator iter = list.borrowIterator()) {
                 assertEquals(7, list.availableIteratorCount());
-                iter.nextDouble();
+                iter.next();
             }
 
             assertEquals(8, list.availableIteratorCount());
@@ -558,10 +558,10 @@ class DoubleListTest {
         @DisplayName("should throw on next when at end")
         void testNextPastEnd() {
             try (DoubleList.DoubleListIterator iter = list.borrowIterator()) {
-                iter.nextDouble();
-                iter.nextDouble();
-                iter.nextDouble();
-                assertThrows(NoSuchElementException.class, iter::nextDouble);
+                iter.next();
+                iter.next();
+                iter.next();
+                assertThrows(NoSuchElementException.class, iter::next);
             }
         }
 
@@ -569,7 +569,7 @@ class DoubleListTest {
         @DisplayName("should throw on previous when at start")
         void testPreviousPastStart() {
             try (DoubleList.DoubleListIterator iter = list.borrowIterator(0)) {
-                assertThrows(NoSuchElementException.class, iter::previousDouble);
+                assertThrows(NoSuchElementException.class, iter::previous);
             }
         }
 
@@ -580,7 +580,7 @@ class DoubleListTest {
                 assertEquals(0, iter.nextIndex());
                 assertEquals(-1, iter.previousIndex());
 
-                iter.nextDouble();
+                iter.next();
 
                 assertEquals(1, iter.nextIndex());
                 assertEquals(0, iter.previousIndex());
@@ -594,8 +594,8 @@ class DoubleListTest {
                 assertEquals(1, iter.nextIndex());
                 assertEquals(0, iter.previousIndex());
 
-                assertEquals(20, iter.nextDouble());
-                assertEquals(20, iter.previousDouble());
+                assertEquals(20, iter.next());
+                assertEquals(20, iter.previous());
             }
         }
 
@@ -603,7 +603,7 @@ class DoubleListTest {
         @DisplayName("should not return wrong iterator")
         void testReturnWrongIterator() {
             DoubleList list2 = DoubleList.builder().build();
-            list2.addDouble(1);
+            list2.add(1);
 
             DoubleList.DoubleListIterator iter = list.borrowIterator();
 
@@ -623,9 +623,9 @@ class DoubleListTest {
         @BeforeEach
         void setUp() {
             list = DoubleList.builder().build();
-            list.addDouble(100);
-            list.addDouble(200);
-            list.addDouble(300);
+            list.add(100);
+            list.add(200);
+            list.add(300);
         }
 
         @Test
@@ -762,8 +762,8 @@ class DoubleListTest {
 
             assertTrue(list.isEmpty());
             assertEquals(0, list.size());
-            assertEquals(-1, list.indexOfDouble(0));
-            assertFalse(list.containsDouble(0));
+            assertEquals(-1, list.indexOf(0));
+            assertFalse(list.contains(0));
 
             double[] array = list.toDoubleArray();
             assertEquals(0, array.length);
@@ -773,11 +773,11 @@ class DoubleListTest {
         @DisplayName("should handle single element")
         void testSingleElement() {
             DoubleList list = DoubleList.builder().build();
-            list.addDouble(42);
+            list.add(42);
 
             assertEquals(1, list.size());
             assertEquals(42, list.getDouble(0));
-            assertEquals(0, list.indexOfDouble(42));
+            assertEquals(0, list.indexOf(42));
 
             list.clear();
             assertTrue(list.isEmpty());
@@ -787,24 +787,24 @@ class DoubleListTest {
         @DisplayName("should handle repeated elements")
         void testRepeatedElements() {
             DoubleList list = DoubleList.builder().build();
-            list.addDouble(7);
-            list.addDouble(7);
-            list.addDouble(7);
+            list.add(7);
+            list.add(7);
+            list.add(7);
 
             assertEquals(3, list.size());
-            assertEquals(0, list.indexOfDouble(7));
+            assertEquals(0, list.indexOf(7));
         }
 
         @Test
         @DisplayName("should handle zero value")
         void testZeroValue() {
             DoubleList list = DoubleList.builder().build();
-            list.addDouble(0);
-            list.addDouble(1);
-            list.addDouble(0);
+            list.add(0);
+            list.add(1);
+            list.add(0);
 
-            assertEquals(0, list.indexOfDouble(0));
-            assertTrue(list.containsDouble(0));
+            assertEquals(0, list.indexOf(0));
+            assertTrue(list.contains(0));
         }
     }
 
@@ -819,14 +819,14 @@ class DoubleListTest {
 
             // Add elements
             for (int i = 0; i < 10; i++) {
-                list.addDouble((i * 10));
+                list.add((i * 10));
             }
 
             // Search
-            assertEquals(5, list.indexOfDouble(50));
+            assertEquals(5, list.indexOf(50));
 
             // Modify
-            list.setDouble(5, 999);
+            list.set(5, 999);
             assertEquals(999, list.getDouble(5));
 
             // Remove
@@ -838,7 +838,7 @@ class DoubleListTest {
             int count = 0;
             try (DoubleList.DoubleListIterator iter = list.borrowIterator()) {
                 while (iter.hasNext()) {
-                    iter.nextDouble();
+                    iter.next();
                     count++;
                 }
             }
@@ -846,7 +846,7 @@ class DoubleListTest {
 
             // Bulk add
             double[] more = {1000, 2000};
-            list.addAllDoubles(more);
+            list.addAll(more);
             assertEquals(11, list.size());
 
             // Clear
@@ -861,13 +861,13 @@ class DoubleListTest {
 
             // Add many elements
             for (int i = 0; i < 10000; i++) {
-                list.addDouble(i);
+                list.add(i);
             }
 
             assertEquals(10000, list.size());
 
             // Search in large list
-            assertEquals(5000, list.indexOfDouble(5000));
+            assertEquals(5000, list.indexOf(5000));
 
             // Remove from middle repeatedly
             for (int i = 0; i < 100; i++) {

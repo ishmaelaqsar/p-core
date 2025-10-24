@@ -33,9 +33,9 @@ class IntListTest {
         @Test
         @DisplayName("should add elements")
         void testAdd() {
-            list.addInt(10);
-            list.addInt(20);
-            list.addInt(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
 
             assertEquals(3, list.size());
             assertEquals(10, list.getInt(0));
@@ -57,8 +57,8 @@ class IntListTest {
         @Test
         @DisplayName("should get elements")
         void testGet() {
-            list.addInt(100);
-            list.addInt(200);
+            list.add(100);
+            list.add(200);
 
             assertEquals(100, list.getInt(0));
             assertEquals(200, list.getInt(1));
@@ -67,7 +67,7 @@ class IntListTest {
         @Test
         @DisplayName("should throw on invalid index for get")
         void testGetInvalidIndex() {
-            list.addInt(1);
+            list.add(1);
             assertThrows(IndexOutOfBoundsException.class, () -> list.getInt(-1));
             assertThrows(IndexOutOfBoundsException.class, () -> list.getInt(1));
             assertThrows(IndexOutOfBoundsException.class, () -> list.getInt(100));
@@ -76,8 +76,8 @@ class IntListTest {
         @Test
         @DisplayName("should set elements")
         void testSet() {
-            list.addInt(50);
-            int old = list.setInt(0, 75);
+            list.add(50);
+            int old = list.set(0, 75);
 
             assertEquals(50, old);
             assertEquals(75, list.getInt(0));
@@ -96,17 +96,17 @@ class IntListTest {
         @Test
         @DisplayName("should throw on invalid index for set")
         void testSetInvalidIndex() {
-            list.addInt(1);
-            assertThrows(IndexOutOfBoundsException.class, () -> list.setInt(-1, 0));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.setInt(1, 0));
+            list.add(1);
+            assertThrows(IndexOutOfBoundsException.class, () -> list.set(-1, 0));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.set(1, 0));
         }
 
         @Test
         @DisplayName("should remove elements")
         void testRemove() {
-            list.addInt(10);
-            list.addInt(20);
-            list.addInt(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
 
             int removed = list.remove(1);
 
@@ -119,8 +119,8 @@ class IntListTest {
         @Test
         @DisplayName("should remove last element")
         void testRemoveLast() {
-            list.addInt(10);
-            list.addInt(20);
+            list.add(10);
+            list.add(20);
 
             list.remove(1);
 
@@ -131,9 +131,9 @@ class IntListTest {
         @Test
         @DisplayName("should remove first element")
         void testRemoveFirst() {
-            list.addInt(10);
-            list.addInt(20);
-            list.addInt(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
 
             list.remove(0);
 
@@ -145,9 +145,9 @@ class IntListTest {
         @Test
         @DisplayName("should clear list")
         void testClear() {
-            list.addInt(1);
-            list.addInt(2);
-            list.addInt(3);
+            list.add(1);
+            list.add(2);
+            list.add(3);
 
             list.clear();
 
@@ -170,21 +170,21 @@ class IntListTest {
         @Test
         @DisplayName("should find element")
         void testIndexOf() {
-            list.addInt(100);
-            list.addInt(200);
-            list.addInt(300);
+            list.add(100);
+            list.add(200);
+            list.add(300);
 
-            assertEquals(0, list.indexOfInt(100));
-            assertEquals(1, list.indexOfInt(200));
-            assertEquals(2, list.indexOfInt(300));
-            assertEquals(-1, list.indexOfInt(999));
+            assertEquals(0, list.indexOf(100));
+            assertEquals(1, list.indexOf(200));
+            assertEquals(2, list.indexOf(300));
+            assertEquals(-1, list.indexOf(999));
         }
 
         @Test
         @DisplayName("should find boxed element")
         void testIndexOfBoxed() {
-            list.addInt(100);
-            list.addInt(200);
+            list.add(100);
+            list.add(200);
 
             assertEquals(0, list.indexOf(100));
             assertEquals(1, list.indexOf(200));
@@ -194,7 +194,7 @@ class IntListTest {
         @Test
         @DisplayName("should return -1 for wrong type in indexOf")
         void testIndexOfWrongType() {
-            list.addInt(100);
+            list.add(100);
 
             assertEquals(-1, list.indexOf("not a number"));
             assertEquals(-1, list.indexOf(new Object()));
@@ -203,12 +203,12 @@ class IntListTest {
         @Test
         @DisplayName("should test contains")
         void testContains() {
-            list.addInt(50);
-            list.addInt(100);
+            list.add(50);
+            list.add(100);
 
-            assertTrue(list.containsInt(50));
+            assertTrue(list.contains(50));
             assertTrue(list.contains(100));
-            assertFalse(list.containsInt(150));
+            assertFalse(list.contains(150));
             assertFalse(list.contains(999));
         }
 
@@ -217,24 +217,24 @@ class IntListTest {
         void testLargeListSearch() {
             // Add more than 8 elements to test unrolled loop
             for (int i = 0; i < 20; i++) {
-                list.addInt((i * 10));
+                list.add((i * 10));
             }
 
-            assertEquals(0, list.indexOfInt(0));
-            assertEquals(10, list.indexOfInt(100));
-            assertEquals(19, list.indexOfInt(190));
-            assertEquals(-1, list.indexOfInt(200));
+            assertEquals(0, list.indexOf(0));
+            assertEquals(10, list.indexOf(100));
+            assertEquals(19, list.indexOf(190));
+            assertEquals(-1, list.indexOf(200));
         }
 
         @Test
         @DisplayName("should find first occurrence")
         void testIndexOfFirstOccurrence() {
-            list.addInt(10);
-            list.addInt(20);
-            list.addInt(10);
-            list.addInt(30);
+            list.add(10);
+            list.add(20);
+            list.add(10);
+            list.add(30);
 
-            assertEquals(0, list.indexOfInt(10));
+            assertEquals(0, list.indexOf(10));
         }
     }
 
@@ -253,7 +253,7 @@ class IntListTest {
         @DisplayName("should add all from array")
         void testAddAllArray() {
             int[] values = {1, 2, 3, 4};
-            list.addAllInts(values);
+            list.addAll(values);
 
             assertEquals(4, list.size());
             assertEquals(1, list.getInt(0));
@@ -264,7 +264,7 @@ class IntListTest {
         @DisplayName("should add all from array with offset")
         void testAddAllArrayWithOffset() {
             int[] values = {10, 20, 30, 40, 50};
-            list.addAllInts(values, 1, 3);
+            list.addAll(values, 1, 3);
 
             assertEquals(3, list.size());
             assertEquals(20, list.getInt(0));
@@ -276,7 +276,7 @@ class IntListTest {
         @DisplayName("should handle empty addAll")
         void testAddAllEmpty() {
             int[] empty = {};
-            list.addAllInts(empty);
+            list.addAll(empty);
             assertEquals(0, list.size());
         }
 
@@ -284,7 +284,7 @@ class IntListTest {
         @DisplayName("should handle zero-length addAll")
         void testAddAllZeroLength() {
             int[] values = {1, 2, 3};
-            list.addAllInts(values, 1, 0);
+            list.addAll(values, 1, 0);
             assertEquals(0, list.size());
         }
 
@@ -293,17 +293,17 @@ class IntListTest {
         void testAddAllInvalidRange() {
             int[] values = {1, 2, 3};
 
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllInts(values, -1, 2));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllInts(values, 0, 10));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllInts(values, 2, 5));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAll(values, -1, 2));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAll(values, 0, 10));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAll(values, 2, 5));
         }
 
         @Test
         @DisplayName("should convert to array")
         void testToArray() {
-            list.addInt(111);
-            list.addInt(222);
-            list.addInt(333);
+            list.add(111);
+            list.add(222);
+            list.add(333);
 
             int[] array = list.toIntArray();
 
@@ -316,7 +316,7 @@ class IntListTest {
         @Test
         @DisplayName("should return independent array copy")
         void testToArrayIndependent() {
-            list.addInt(10);
+            list.add(10);
 
             int[] array = list.toIntArray();
             array[0] = 999;
@@ -382,7 +382,7 @@ class IntListTest {
             list.add(20);
 
             assertEquals(1, list.indexOf(null));
-            assertEquals(1, list.indexOfInt(-999));
+            assertEquals(1, list.indexOf(-999));
         }
     }
 
@@ -396,7 +396,7 @@ class IntListTest {
             IntList list = IntList.builder().initialCapacity(2).build();
 
             for (int i = 0; i < 100; i++) {
-                list.addInt(i);
+                list.add(i);
             }
 
             assertEquals(100, list.size());
@@ -411,7 +411,7 @@ class IntListTest {
             IntList list = IntList.builder().initialCapacity(100).build();
 
             for (int i = 0; i < 50; i++) {
-                list.addInt(i);
+                list.add(i);
             }
 
             assertEquals(50, list.size());
@@ -422,7 +422,7 @@ class IntListTest {
         void testMinimumCapacity() {
             IntList list = IntList.builder().initialCapacity(0).build();
 
-            list.addInt(42);
+            list.add(42);
             assertEquals(1, list.size());
             assertEquals(42, list.getInt(0));
         }
@@ -435,7 +435,7 @@ class IntListTest {
             list.ensureCapacity(1000);
 
             for (int i = 0; i < 1000; i++) {
-                list.addInt(i);
+                list.add(i);
             }
 
             assertEquals(1000, list.size());
@@ -448,7 +448,7 @@ class IntListTest {
 
             // Should use 1.5x growth instead of 2x
             for (int i = 0; i < 100; i++) {
-                list.addInt(i);
+                list.add(i);
             }
 
             assertEquals(100, list.size());
@@ -464,9 +464,9 @@ class IntListTest {
         @BeforeEach
         void setUp() {
             list = IntList.builder().build();
-            list.addInt(10);
-            list.addInt(20);
-            list.addInt(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
         }
 
         @Test
@@ -487,9 +487,9 @@ class IntListTest {
         void testIterateForward() {
             try (IntList.IntListIterator iter = list.borrowIterator()) {
                 assertTrue(iter.hasNext());
-                assertEquals(10, iter.nextInt());
-                assertEquals(20, iter.nextInt());
-                assertEquals(30, iter.nextInt());
+                assertEquals(10, iter.next());
+                assertEquals(20, iter.next());
+                assertEquals(30, iter.next());
                 assertFalse(iter.hasNext());
             }
         }
@@ -499,9 +499,9 @@ class IntListTest {
         void testIterateBackward() {
             try (IntList.IntListIterator iter = list.borrowIterator(3)) {
                 assertTrue(iter.hasPrevious());
-                assertEquals(30, iter.previousInt());
-                assertEquals(20, iter.previousInt());
-                assertEquals(10, iter.previousInt());
+                assertEquals(30, iter.previous());
+                assertEquals(20, iter.previous());
+                assertEquals(10, iter.previous());
                 assertFalse(iter.hasPrevious());
             }
         }
@@ -510,8 +510,8 @@ class IntListTest {
         @DisplayName("should set during iteration")
         void testIteratorSet() {
             try (IntList.IntListIterator iter = list.borrowIterator()) {
-                iter.nextInt();
-                iter.setInt(99);
+                iter.next();
+                iter.set(99);
             }
 
             assertEquals(99, list.getInt(0));
@@ -521,7 +521,7 @@ class IntListTest {
         @DisplayName("should throw when setting without next/previous")
         void testIteratorSetWithoutMoving() {
             try (IntList.IntListIterator iter = list.borrowIterator()) {
-                assertThrows(IllegalStateException.class, () -> iter.setInt(0));
+                assertThrows(IllegalStateException.class, () -> iter.set(0));
             }
         }
 
@@ -548,7 +548,7 @@ class IntListTest {
 
             try (IntList.IntListIterator iter = list.borrowIterator()) {
                 assertEquals(7, list.availableIteratorCount());
-                iter.nextInt();
+                iter.next();
             }
 
             assertEquals(8, list.availableIteratorCount());
@@ -558,10 +558,10 @@ class IntListTest {
         @DisplayName("should throw on next when at end")
         void testNextPastEnd() {
             try (IntList.IntListIterator iter = list.borrowIterator()) {
-                iter.nextInt();
-                iter.nextInt();
-                iter.nextInt();
-                assertThrows(NoSuchElementException.class, iter::nextInt);
+                iter.next();
+                iter.next();
+                iter.next();
+                assertThrows(NoSuchElementException.class, iter::next);
             }
         }
 
@@ -569,7 +569,7 @@ class IntListTest {
         @DisplayName("should throw on previous when at start")
         void testPreviousPastStart() {
             try (IntList.IntListIterator iter = list.borrowIterator(0)) {
-                assertThrows(NoSuchElementException.class, iter::previousInt);
+                assertThrows(NoSuchElementException.class, iter::previous);
             }
         }
 
@@ -580,7 +580,7 @@ class IntListTest {
                 assertEquals(0, iter.nextIndex());
                 assertEquals(-1, iter.previousIndex());
 
-                iter.nextInt();
+                iter.next();
 
                 assertEquals(1, iter.nextIndex());
                 assertEquals(0, iter.previousIndex());
@@ -594,8 +594,8 @@ class IntListTest {
                 assertEquals(1, iter.nextIndex());
                 assertEquals(0, iter.previousIndex());
 
-                assertEquals(20, iter.nextInt());
-                assertEquals(20, iter.previousInt());
+                assertEquals(20, iter.next());
+                assertEquals(20, iter.previous());
             }
         }
 
@@ -603,7 +603,7 @@ class IntListTest {
         @DisplayName("should not return wrong iterator")
         void testReturnWrongIterator() {
             IntList list2 = IntList.builder().build();
-            list2.addInt(1);
+            list2.add(1);
 
             IntList.IntListIterator iter = list.borrowIterator();
 
@@ -623,9 +623,9 @@ class IntListTest {
         @BeforeEach
         void setUp() {
             list = IntList.builder().build();
-            list.addInt(100);
-            list.addInt(200);
-            list.addInt(300);
+            list.add(100);
+            list.add(200);
+            list.add(300);
         }
 
         @Test
@@ -762,8 +762,8 @@ class IntListTest {
 
             assertTrue(list.isEmpty());
             assertEquals(0, list.size());
-            assertEquals(-1, list.indexOfInt(0));
-            assertFalse(list.containsInt(0));
+            assertEquals(-1, list.indexOf(0));
+            assertFalse(list.contains(0));
 
             int[] array = list.toIntArray();
             assertEquals(0, array.length);
@@ -773,11 +773,11 @@ class IntListTest {
         @DisplayName("should handle single element")
         void testSingleElement() {
             IntList list = IntList.builder().build();
-            list.addInt(42);
+            list.add(42);
 
             assertEquals(1, list.size());
             assertEquals(42, list.getInt(0));
-            assertEquals(0, list.indexOfInt(42));
+            assertEquals(0, list.indexOf(42));
 
             list.clear();
             assertTrue(list.isEmpty());
@@ -787,24 +787,24 @@ class IntListTest {
         @DisplayName("should handle repeated elements")
         void testRepeatedElements() {
             IntList list = IntList.builder().build();
-            list.addInt(7);
-            list.addInt(7);
-            list.addInt(7);
+            list.add(7);
+            list.add(7);
+            list.add(7);
 
             assertEquals(3, list.size());
-            assertEquals(0, list.indexOfInt(7));
+            assertEquals(0, list.indexOf(7));
         }
 
         @Test
         @DisplayName("should handle zero value")
         void testZeroValue() {
             IntList list = IntList.builder().build();
-            list.addInt(0);
-            list.addInt(1);
-            list.addInt(0);
+            list.add(0);
+            list.add(1);
+            list.add(0);
 
-            assertEquals(0, list.indexOfInt(0));
-            assertTrue(list.containsInt(0));
+            assertEquals(0, list.indexOf(0));
+            assertTrue(list.contains(0));
         }
     }
 
@@ -819,14 +819,14 @@ class IntListTest {
 
             // Add elements
             for (int i = 0; i < 10; i++) {
-                list.addInt((i * 10));
+                list.add((i * 10));
             }
 
             // Search
-            assertEquals(5, list.indexOfInt(50));
+            assertEquals(5, list.indexOf(50));
 
             // Modify
-            list.setInt(5, 999);
+            list.set(5, 999);
             assertEquals(999, list.getInt(5));
 
             // Remove
@@ -838,7 +838,7 @@ class IntListTest {
             int count = 0;
             try (IntList.IntListIterator iter = list.borrowIterator()) {
                 while (iter.hasNext()) {
-                    iter.nextInt();
+                    iter.next();
                     count++;
                 }
             }
@@ -846,7 +846,7 @@ class IntListTest {
 
             // Bulk add
             int[] more = {1000, 2000};
-            list.addAllInts(more);
+            list.addAll(more);
             assertEquals(11, list.size());
 
             // Clear
@@ -861,13 +861,13 @@ class IntListTest {
 
             // Add many elements
             for (int i = 0; i < 10000; i++) {
-                list.addInt(i);
+                list.add(i);
             }
 
             assertEquals(10000, list.size());
 
             // Search in large list
-            assertEquals(5000, list.indexOfInt(5000));
+            assertEquals(5000, list.indexOf(5000));
 
             // Remove from middle repeatedly
             for (int i = 0; i < 100; i++) {

@@ -33,9 +33,9 @@ class FloatListTest {
         @Test
         @DisplayName("should add elements")
         void testAdd() {
-            list.addFloat(10);
-            list.addFloat(20);
-            list.addFloat(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
 
             assertEquals(3, list.size());
             assertEquals(10, list.getFloat(0));
@@ -57,8 +57,8 @@ class FloatListTest {
         @Test
         @DisplayName("should get elements")
         void testGet() {
-            list.addFloat(100);
-            list.addFloat(200);
+            list.add(100);
+            list.add(200);
 
             assertEquals(100, list.getFloat(0));
             assertEquals(200, list.getFloat(1));
@@ -67,7 +67,7 @@ class FloatListTest {
         @Test
         @DisplayName("should throw on invalid index for get")
         void testGetInvalidIndex() {
-            list.addFloat(1);
+            list.add(1);
             assertThrows(IndexOutOfBoundsException.class, () -> list.getFloat(-1));
             assertThrows(IndexOutOfBoundsException.class, () -> list.getFloat(1));
             assertThrows(IndexOutOfBoundsException.class, () -> list.getFloat(100));
@@ -76,8 +76,8 @@ class FloatListTest {
         @Test
         @DisplayName("should set elements")
         void testSet() {
-            list.addFloat(50);
-            float old = list.setFloat(0, 75f);
+            list.add(50);
+            float old = list.set(0, 75f);
 
             assertEquals(50, old);
             assertEquals(75, list.getFloat(0));
@@ -96,17 +96,17 @@ class FloatListTest {
         @Test
         @DisplayName("should throw on invalid index for set")
         void testSetInvalidIndex() {
-            list.addFloat(1);
-            assertThrows(IndexOutOfBoundsException.class, () -> list.setFloat(-1, 0));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.setFloat(1, 0));
+            list.add(1);
+            assertThrows(IndexOutOfBoundsException.class, () -> list.set(-1, 0));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.set(1, 0));
         }
 
         @Test
         @DisplayName("should remove elements")
         void testRemove() {
-            list.addFloat(10);
-            list.addFloat(20);
-            list.addFloat(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
 
             float removed = list.remove(1);
 
@@ -119,8 +119,8 @@ class FloatListTest {
         @Test
         @DisplayName("should remove last element")
         void testRemoveLast() {
-            list.addFloat(10);
-            list.addFloat(20);
+            list.add(10);
+            list.add(20);
 
             list.remove(1);
 
@@ -131,9 +131,9 @@ class FloatListTest {
         @Test
         @DisplayName("should remove first element")
         void testRemoveFirst() {
-            list.addFloat(10);
-            list.addFloat(20);
-            list.addFloat(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
 
             list.remove(0);
 
@@ -145,9 +145,9 @@ class FloatListTest {
         @Test
         @DisplayName("should clear list")
         void testClear() {
-            list.addFloat(1);
-            list.addFloat(2);
-            list.addFloat(3);
+            list.add(1);
+            list.add(2);
+            list.add(3);
 
             list.clear();
 
@@ -170,21 +170,21 @@ class FloatListTest {
         @Test
         @DisplayName("should find element")
         void testIndexOf() {
-            list.addFloat(100);
-            list.addFloat(200);
-            list.addFloat(300);
+            list.add(100);
+            list.add(200);
+            list.add(300);
 
-            assertEquals(0, list.indexOfFloat(100));
-            assertEquals(1, list.indexOfFloat(200));
-            assertEquals(2, list.indexOfFloat(300));
-            assertEquals(-1, list.indexOfFloat(999));
+            assertEquals(0, list.indexOf(100));
+            assertEquals(1, list.indexOf(200));
+            assertEquals(2, list.indexOf(300));
+            assertEquals(-1, list.indexOf(999));
         }
 
         @Test
         @DisplayName("should find boxed element")
         void testIndexOfBoxed() {
-            list.addFloat(100);
-            list.addFloat(200);
+            list.add(100);
+            list.add(200);
 
             assertEquals(0, list.indexOf(100f));
             assertEquals(1, list.indexOf(200f));
@@ -194,7 +194,7 @@ class FloatListTest {
         @Test
         @DisplayName("should return -1 for wrong type in indexOf")
         void testIndexOfWrongType() {
-            list.addFloat(100);
+            list.add(100);
 
             assertEquals(-1, list.indexOf("not a number"));
             assertEquals(-1, list.indexOf(new Object()));
@@ -203,12 +203,12 @@ class FloatListTest {
         @Test
         @DisplayName("should test contains")
         void testContains() {
-            list.addFloat(50);
-            list.addFloat(100);
+            list.add(50);
+            list.add(100);
 
-            assertTrue(list.containsFloat(50));
+            assertTrue(list.contains(50));
             assertTrue(list.contains(100f));
-            assertFalse(list.containsFloat(150));
+            assertFalse(list.contains(150));
             assertFalse(list.contains(999f));
         }
 
@@ -217,24 +217,24 @@ class FloatListTest {
         void testLargeListSearch() {
             // Add more than 8 elements to test unrolled loop
             for (int i = 0; i < 20; i++) {
-                list.addFloat((i * 10));
+                list.add((i * 10));
             }
 
-            assertEquals(0, list.indexOfFloat(0));
-            assertEquals(10, list.indexOfFloat(100));
-            assertEquals(19, list.indexOfFloat(190));
-            assertEquals(-1, list.indexOfFloat(200));
+            assertEquals(0, list.indexOf(0));
+            assertEquals(10, list.indexOf(100));
+            assertEquals(19, list.indexOf(190));
+            assertEquals(-1, list.indexOf(200));
         }
 
         @Test
         @DisplayName("should find first occurrence")
         void testIndexOfFirstOccurrence() {
-            list.addFloat(10);
-            list.addFloat(20);
-            list.addFloat(10);
-            list.addFloat(30);
+            list.add(10);
+            list.add(20);
+            list.add(10);
+            list.add(30);
 
-            assertEquals(0, list.indexOfFloat(10));
+            assertEquals(0, list.indexOf(10));
         }
     }
 
@@ -253,7 +253,7 @@ class FloatListTest {
         @DisplayName("should add all from array")
         void testAddAllArray() {
             float[] values = {1, 2, 3, 4};
-            list.addAllFloats(values);
+            list.addAll(values);
 
             assertEquals(4, list.size());
             assertEquals(1, list.getFloat(0));
@@ -264,7 +264,7 @@ class FloatListTest {
         @DisplayName("should add all from array with offset")
         void testAddAllArrayWithOffset() {
             float[] values = {10, 20, 30, 40, 50};
-            list.addAllFloats(values, 1, 3);
+            list.addAll(values, 1, 3);
 
             assertEquals(3, list.size());
             assertEquals(20, list.getFloat(0));
@@ -276,7 +276,7 @@ class FloatListTest {
         @DisplayName("should handle empty addAll")
         void testAddAllEmpty() {
             float[] empty = {};
-            list.addAllFloats(empty);
+            list.addAll(empty);
             assertEquals(0, list.size());
         }
 
@@ -284,7 +284,7 @@ class FloatListTest {
         @DisplayName("should handle zero-length addAll")
         void testAddAllZeroLength() {
             float[] values = {1, 2, 3};
-            list.addAllFloats(values, 1, 0);
+            list.addAll(values, 1, 0);
             assertEquals(0, list.size());
         }
 
@@ -293,17 +293,17 @@ class FloatListTest {
         void testAddAllInvalidRange() {
             float[] values = {1, 2, 3};
 
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllFloats(values, -1, 2));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllFloats(values, 0, 10));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllFloats(values, 2, 5));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAll(values, -1, 2));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAll(values, 0, 10));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAll(values, 2, 5));
         }
 
         @Test
         @DisplayName("should convert to array")
         void testToArray() {
-            list.addFloat(111);
-            list.addFloat(222);
-            list.addFloat(333);
+            list.add(111);
+            list.add(222);
+            list.add(333);
 
             float[] array = list.toFloatArray();
 
@@ -316,7 +316,7 @@ class FloatListTest {
         @Test
         @DisplayName("should return independent array copy")
         void testToArrayIndependent() {
-            list.addFloat(10);
+            list.add(10);
 
             float[] array = list.toFloatArray();
             array[0] = 999;
@@ -382,7 +382,7 @@ class FloatListTest {
             list.add(20f);
 
             assertEquals(1, list.indexOf(null));
-            assertEquals(1, list.indexOfFloat(-999));
+            assertEquals(1, list.indexOf(-999));
         }
     }
 
@@ -396,7 +396,7 @@ class FloatListTest {
             FloatList list = FloatList.builder().initialCapacity(2).build();
 
             for (int i = 0; i < 100; i++) {
-                list.addFloat(i);
+                list.add(i);
             }
 
             assertEquals(100, list.size());
@@ -411,7 +411,7 @@ class FloatListTest {
             FloatList list = FloatList.builder().initialCapacity(100).build();
 
             for (int i = 0; i < 50; i++) {
-                list.addFloat(i);
+                list.add(i);
             }
 
             assertEquals(50, list.size());
@@ -422,7 +422,7 @@ class FloatListTest {
         void testMinimumCapacity() {
             FloatList list = FloatList.builder().initialCapacity(0).build();
 
-            list.addFloat(42);
+            list.add(42);
             assertEquals(1, list.size());
             assertEquals(42, list.getFloat(0));
         }
@@ -435,7 +435,7 @@ class FloatListTest {
             list.ensureCapacity(1000);
 
             for (int i = 0; i < 1000; i++) {
-                list.addFloat(i);
+                list.add(i);
             }
 
             assertEquals(1000, list.size());
@@ -448,7 +448,7 @@ class FloatListTest {
 
             // Should use 1.5x growth instead of 2x
             for (int i = 0; i < 100; i++) {
-                list.addFloat(i);
+                list.add(i);
             }
 
             assertEquals(100, list.size());
@@ -464,9 +464,9 @@ class FloatListTest {
         @BeforeEach
         void setUp() {
             list = FloatList.builder().build();
-            list.addFloat(10);
-            list.addFloat(20);
-            list.addFloat(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
         }
 
         @Test
@@ -487,9 +487,9 @@ class FloatListTest {
         void testIterateForward() {
             try (FloatList.FloatListIterator iter = list.borrowIterator()) {
                 assertTrue(iter.hasNext());
-                assertEquals(10, iter.nextFloat());
-                assertEquals(20, iter.nextFloat());
-                assertEquals(30, iter.nextFloat());
+                assertEquals(10, iter.next());
+                assertEquals(20, iter.next());
+                assertEquals(30, iter.next());
                 assertFalse(iter.hasNext());
             }
         }
@@ -499,9 +499,9 @@ class FloatListTest {
         void testIterateBackward() {
             try (FloatList.FloatListIterator iter = list.borrowIterator(3)) {
                 assertTrue(iter.hasPrevious());
-                assertEquals(30, iter.previousFloat());
-                assertEquals(20, iter.previousFloat());
-                assertEquals(10, iter.previousFloat());
+                assertEquals(30, iter.previous());
+                assertEquals(20, iter.previous());
+                assertEquals(10, iter.previous());
                 assertFalse(iter.hasPrevious());
             }
         }
@@ -510,8 +510,8 @@ class FloatListTest {
         @DisplayName("should set during iteration")
         void testIteratorSet() {
             try (FloatList.FloatListIterator iter = list.borrowIterator()) {
-                iter.nextFloat();
-                iter.setFloat(99);
+                iter.next();
+                iter.set(99);
             }
 
             assertEquals(99, list.getFloat(0));
@@ -521,7 +521,7 @@ class FloatListTest {
         @DisplayName("should throw when setting without next/previous")
         void testIteratorSetWithoutMoving() {
             try (FloatList.FloatListIterator iter = list.borrowIterator()) {
-                assertThrows(IllegalStateException.class, () -> iter.setFloat(0));
+                assertThrows(IllegalStateException.class, () -> iter.set(0));
             }
         }
 
@@ -548,7 +548,7 @@ class FloatListTest {
 
             try (FloatList.FloatListIterator iter = list.borrowIterator()) {
                 assertEquals(7, list.availableIteratorCount());
-                iter.nextFloat();
+                iter.next();
             }
 
             assertEquals(8, list.availableIteratorCount());
@@ -558,10 +558,10 @@ class FloatListTest {
         @DisplayName("should throw on next when at end")
         void testNextPastEnd() {
             try (FloatList.FloatListIterator iter = list.borrowIterator()) {
-                iter.nextFloat();
-                iter.nextFloat();
-                iter.nextFloat();
-                assertThrows(NoSuchElementException.class, iter::nextFloat);
+                iter.next();
+                iter.next();
+                iter.next();
+                assertThrows(NoSuchElementException.class, iter::next);
             }
         }
 
@@ -569,7 +569,7 @@ class FloatListTest {
         @DisplayName("should throw on previous when at start")
         void testPreviousPastStart() {
             try (FloatList.FloatListIterator iter = list.borrowIterator(0)) {
-                assertThrows(NoSuchElementException.class, iter::previousFloat);
+                assertThrows(NoSuchElementException.class, iter::previous);
             }
         }
 
@@ -580,7 +580,7 @@ class FloatListTest {
                 assertEquals(0, iter.nextIndex());
                 assertEquals(-1, iter.previousIndex());
 
-                iter.nextFloat();
+                iter.next();
 
                 assertEquals(1, iter.nextIndex());
                 assertEquals(0, iter.previousIndex());
@@ -594,8 +594,8 @@ class FloatListTest {
                 assertEquals(1, iter.nextIndex());
                 assertEquals(0, iter.previousIndex());
 
-                assertEquals(20, iter.nextFloat());
-                assertEquals(20, iter.previousFloat());
+                assertEquals(20, iter.next());
+                assertEquals(20, iter.previous());
             }
         }
 
@@ -603,7 +603,7 @@ class FloatListTest {
         @DisplayName("should not return wrong iterator")
         void testReturnWrongIterator() {
             FloatList list2 = FloatList.builder().build();
-            list2.addFloat(1);
+            list2.add(1);
 
             FloatList.FloatListIterator iter = list.borrowIterator();
 
@@ -623,9 +623,9 @@ class FloatListTest {
         @BeforeEach
         void setUp() {
             list = FloatList.builder().build();
-            list.addFloat(100);
-            list.addFloat(200);
-            list.addFloat(300);
+            list.add(100);
+            list.add(200);
+            list.add(300);
         }
 
         @Test
@@ -762,8 +762,8 @@ class FloatListTest {
 
             assertTrue(list.isEmpty());
             assertEquals(0, list.size());
-            assertEquals(-1, list.indexOfFloat(0));
-            assertFalse(list.containsFloat(0));
+            assertEquals(-1, list.indexOf(0));
+            assertFalse(list.contains(0));
 
             float[] array = list.toFloatArray();
             assertEquals(0, array.length);
@@ -773,11 +773,11 @@ class FloatListTest {
         @DisplayName("should handle single element")
         void testSingleElement() {
             FloatList list = FloatList.builder().build();
-            list.addFloat(42);
+            list.add(42);
 
             assertEquals(1, list.size());
             assertEquals(42, list.getFloat(0));
-            assertEquals(0, list.indexOfFloat(42));
+            assertEquals(0, list.indexOf(42));
 
             list.clear();
             assertTrue(list.isEmpty());
@@ -787,24 +787,24 @@ class FloatListTest {
         @DisplayName("should handle repeated elements")
         void testRepeatedElements() {
             FloatList list = FloatList.builder().build();
-            list.addFloat(7);
-            list.addFloat(7);
-            list.addFloat(7);
+            list.add(7);
+            list.add(7);
+            list.add(7);
 
             assertEquals(3, list.size());
-            assertEquals(0, list.indexOfFloat(7));
+            assertEquals(0, list.indexOf(7));
         }
 
         @Test
         @DisplayName("should handle zero value")
         void testZeroValue() {
             FloatList list = FloatList.builder().build();
-            list.addFloat(0);
-            list.addFloat(1);
-            list.addFloat(0);
+            list.add(0);
+            list.add(1);
+            list.add(0);
 
-            assertEquals(0, list.indexOfFloat(0));
-            assertTrue(list.containsFloat(0));
+            assertEquals(0, list.indexOf(0));
+            assertTrue(list.contains(0));
         }
     }
 
@@ -819,14 +819,14 @@ class FloatListTest {
 
             // Add elements
             for (int i = 0; i < 10; i++) {
-                list.addFloat((i * 10));
+                list.add((i * 10));
             }
 
             // Search
-            assertEquals(5, list.indexOfFloat(50));
+            assertEquals(5, list.indexOf(50));
 
             // Modify
-            list.setFloat(5, 999);
+            list.set(5, 999);
             assertEquals(999, list.getFloat(5));
 
             // Remove
@@ -838,7 +838,7 @@ class FloatListTest {
             int count = 0;
             try (FloatList.FloatListIterator iter = list.borrowIterator()) {
                 while (iter.hasNext()) {
-                    iter.nextFloat();
+                    iter.next();
                     count++;
                 }
             }
@@ -846,7 +846,7 @@ class FloatListTest {
 
             // Bulk add
             float[] more = {1000, 2000};
-            list.addAllFloats(more);
+            list.addAll(more);
             assertEquals(11, list.size());
 
             // Clear
@@ -861,13 +861,13 @@ class FloatListTest {
 
             // Add many elements
             for (int i = 0; i < 10000; i++) {
-                list.addFloat(i);
+                list.add(i);
             }
 
             assertEquals(10000, list.size());
 
             // Search in large list
-            assertEquals(5000, list.indexOfFloat(5000));
+            assertEquals(5000, list.indexOf(5000));
 
             // Remove from middle repeatedly
             for (int i = 0; i < 100; i++) {

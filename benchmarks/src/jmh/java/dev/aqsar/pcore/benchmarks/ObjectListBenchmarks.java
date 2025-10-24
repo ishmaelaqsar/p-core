@@ -20,7 +20,8 @@ public class ObjectListBenchmarks {
     private int size;
 
     private ObjectList<Counter> objectList;
-    private ArrayList<Counter> arrayList;
+    private ObjectList<Counter> objectListPreAllocated;
+    private ArrayList<Counter> jdkList;
     private Counter[] data;
 
     public static class Counter {
@@ -40,20 +41,12 @@ public class ObjectListBenchmarks {
 
     @Setup(Level.Invocation)
     public void setupInvocation() {
-        objectList = ObjectList.<Counter>builder().preAllocate(Counter::new).initialCapacity(size).build();
-        arrayList = new ArrayList<>(size);
+        objectList = ObjectList.<Counter>builder().initialCapacity(size).build();
+        objectListPreAllocated = ObjectList.<Counter>builder().preAllocate(Counter::new).initialCapacity(size).build();
+        jdkList = new ArrayList<>(size);
     }
 
     // ==================== Add Benchmarks ====================
-
-    @Benchmark
-    public ObjectList<Counter> objectList_addPreAllocated() {
-        for (int i = 0; i < size; i++) {
-            Counter c = objectList.addPreAllocated();
-            c.value = i;
-        }
-        return objectList;
-    }
 
     @Benchmark
     public ObjectList<Counter> objectList_add() {
@@ -64,11 +57,20 @@ public class ObjectListBenchmarks {
     }
 
     @Benchmark
-    public ArrayList<Counter> arrayList_add() {
+    public ObjectList<Counter> objectListPreAllocated_add() {
         for (int i = 0; i < size; i++) {
-            arrayList.add(new Counter());
+            Counter c = objectListPreAllocated.addPreAllocated();
+            c.value = i;
         }
-        return arrayList;
+        return objectList;
+    }
+
+    @Benchmark
+    public ArrayList<Counter> jdkList_add() {
+        for (int i = 0; i < size; i++) {
+            jdkList.add(new Counter());
+        }
+        return jdkList;
     }
 
     // ==================== Random Access Benchmarks ====================
@@ -79,8 +81,8 @@ public class ObjectListBenchmarks {
         private int size;
 
         private ObjectList<Counter> objectList;
-        private ObjectList<Counter> objectListNoPool;
-        private ArrayList<Counter> arrayList;
+        private ObjectList<Counter> objectListPreAllocated;
+        private ArrayList<Counter> jdkList;
         private int[] accessPattern;
 
         @Setup(Level.Trial)
@@ -94,32 +96,27 @@ public class ObjectListBenchmarks {
             }
 
             // Populate ObjectList
-            objectList = ObjectList.<Counter>builder()
-                                   .preAllocate(Counter::new)
-                                   .initialCapacity(size)
-                                   .build();
+            objectList = ObjectList.<Counter>builder().initialCapacity(size).build();
             for (int i = 0; i < size; i++) {
-                Counter c = objectList.addPreAllocated();
+                Counter c = new Counter();
                 c.value = i;
+                objectList.add(c);
             }
 
-            // Populate ObjectList (no iterator pool)
-            objectListNoPool = ObjectList.<Counter>builder()
-                                         .preAllocate(Counter::new)
-                                         .disableIteratorPool()
-                                         .initialCapacity(size)
-                                         .build();
+            // Populate ObjectList PreAllocated
+            objectListPreAllocated =
+                    ObjectList.<Counter>builder().preAllocate(Counter::new).initialCapacity(size).build();
             for (int i = 0; i < size; i++) {
-                Counter c = objectListNoPool.addPreAllocated();
+                Counter c = objectListPreAllocated.addPreAllocated();
                 c.value = i;
             }
 
             // Populate ArrayList
-            arrayList = new ArrayList<>(size);
+            jdkList = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
                 Counter c = new Counter();
                 c.value = i;
-                arrayList.add(c);
+                jdkList.add(c);
             }
         }
     }
@@ -132,9 +129,16 @@ public class ObjectListBenchmarks {
     }
 
     @Benchmark
-    public void arrayList_randomGet(PopulatedState state, Blackhole bh) {
+    public void objectListPreAllocated_randomGet(PopulatedState state, Blackhole bh) {
         for (int index : state.accessPattern) {
-            bh.consume(state.arrayList.get(index));
+            bh.consume(state.objectListPreAllocated.get(index));
+        }
+    }
+
+    @Benchmark
+    public void jdkList_randomGet(PopulatedState state, Blackhole bh) {
+        for (int index : state.accessPattern) {
+            bh.consume(state.jdkList.get(index));
         }
     }
 
@@ -146,9 +150,16 @@ public class ObjectListBenchmarks {
     }
 
     @Benchmark
-    public void arrayList_sequentialGet(PopulatedState state, Blackhole bh) {
+    public void objectListPreAllocated_sequentialGet(PopulatedState state, Blackhole bh) {
         for (int i = 0; i < state.size; i++) {
-            bh.consume(state.arrayList.get(i));
+            bh.consume(state.objectListPreAllocated.get(i));
+        }
+    }
+
+    @Benchmark
+    public void jdkList_sequentialGet(PopulatedState state, Blackhole bh) {
+        for (int i = 0; i < state.size; i++) {
+            bh.consume(state.jdkList.get(i));
         }
     }
 
@@ -161,9 +172,15 @@ public class ObjectListBenchmarks {
     }
 
     @Benchmark
-    public void arrayList_indexOf_hit(PopulatedState state, Blackhole bh) {
-        Counter target = state.arrayList.get(state.size / 2);
-        bh.consume(state.arrayList.indexOf(target));
+    public void objectListPreAllocated_indexOf_hit(PopulatedState state, Blackhole bh) {
+        Counter target = state.objectListPreAllocated.get(state.size / 2);
+        bh.consume(state.objectListPreAllocated.indexOf(target));
+    }
+
+    @Benchmark
+    public void jdkList_indexOf_hit(PopulatedState state, Blackhole bh) {
+        Counter target = state.jdkList.get(state.size / 2);
+        bh.consume(state.jdkList.indexOf(target));
     }
 
     @Benchmark
@@ -172,8 +189,13 @@ public class ObjectListBenchmarks {
     }
 
     @Benchmark
-    public void arrayList_indexOf_miss(PopulatedState state, Blackhole bh) {
-        bh.consume(state.arrayList.indexOf(new Counter()));
+    public void objectListPreAllocated_indexOf_miss(PopulatedState state, Blackhole bh) {
+        bh.consume(state.objectListPreAllocated.indexOf(new Counter()));
+    }
+
+    @Benchmark
+    public void jdkList_indexOf_miss(PopulatedState state, Blackhole bh) {
+        bh.consume(state.jdkList.indexOf(new Counter()));
     }
 
     @Benchmark
@@ -183,29 +205,44 @@ public class ObjectListBenchmarks {
     }
 
     @Benchmark
+    public void objectListPreAllocated_indexOfIdentity_hit(PopulatedState state, Blackhole bh) {
+        Counter target = state.objectListPreAllocated.get(state.size / 2);
+        bh.consume(state.objectListPreAllocated.indexOfIdentity(target));
+    }
+
+    @Benchmark
     public void objectList_indexOfIdentity_miss(PopulatedState state, Blackhole bh) {
         bh.consume(state.objectList.indexOfIdentity(new Counter()));
+    }
+
+    @Benchmark
+    public void objectListPreAllocated_indexOfIdentity_miss(PopulatedState state, Blackhole bh) {
+        bh.consume(state.objectListPreAllocated.indexOfIdentity(new Counter()));
     }
 
     // ==================== Iterator Benchmarks ====================
 
     @Benchmark
     public void objectList_iterator(PopulatedState state, Blackhole bh) {
-        for (int i = 0; i < state.size; i++) {
-            bh.consume(state.objectList.get(i));
+        try (var it = state.objectList.borrowIterator()) {
+            while (it.hasNext()) {
+                bh.consume(it.next());
+            }
         }
     }
 
     @Benchmark
-    public void objectListNoPool_iterator(PopulatedState state, Blackhole bh) {
-        for (int i = 0; i < state.size; i++) {
-            bh.consume(state.objectListNoPool.get(i));
+    public void objectListPreAllocated_iterator(PopulatedState state, Blackhole bh) {
+        try (var it = state.objectListPreAllocated.borrowIterator()) {
+            while (it.hasNext()) {
+                bh.consume(it.next());
+            }
         }
     }
 
     @Benchmark
-    public void arrayList_iterator(PopulatedState state, Blackhole bh) {
-        for (Counter c : state.arrayList) {
+    public void jdkList_iterator(PopulatedState state, Blackhole bh) {
+        for (Counter c : state.jdkList) {
             bh.consume(c);
         }
     }
@@ -227,8 +264,22 @@ public class ObjectListBenchmarks {
     @Benchmark
     public ObjectList<Counter> objectList_memoryFootprint(MemoryState state) {
         ObjectList<Counter> list = ObjectList.<Counter>builder()
-                                             .preAllocate(Counter::new)
                                              .disableIteratorPool()
+                                             .initialCapacity(state.size)
+                                             .build();
+        for (int i = 0; i < state.size; i++) {
+            Counter c = new Counter();
+            c.value = i;
+            list.add(c);
+        }
+        return list;
+    }
+
+    @Benchmark
+    public ObjectList<Counter> objectListPreAllocated_memoryFootprint(MemoryState state) {
+        ObjectList<Counter> list = ObjectList.<Counter>builder()
+                                             .disableIteratorPool()
+                                             .preAllocate(Counter::new)
                                              .initialCapacity(state.size)
                                              .build();
         for (int i = 0; i < state.size; i++) {
@@ -239,7 +290,7 @@ public class ObjectListBenchmarks {
     }
 
     @Benchmark
-    public ArrayList<Counter> arrayList_memoryFootprint(MemoryState state) {
+    public ArrayList<Counter> jdkList_memoryFootprint(MemoryState state) {
         ArrayList<Counter> list = new ArrayList<>(state.size);
         for (int i = 0; i < state.size; i++) {
             Counter c = new Counter();
@@ -253,6 +304,36 @@ public class ObjectListBenchmarks {
 
     @Benchmark
     public void objectList_mixedWorkload(PopulatedState state, Blackhole bh) {
+        ObjectList<Counter> list = ObjectList.<Counter>builder()
+                                             .disableIteratorPool()
+                                             .initialCapacity(100)
+                                             .build();
+
+        // Add
+        for (int i = 0; i < 100; i++) {
+            Counter c = new Counter();
+            c.value = state.accessPattern[i % state.accessPattern.length];
+            list.add(c);
+        }
+
+        // Search
+        for (int i = 0; i < 50; i++) {
+            bh.consume(list.indexOfIdentity(list.get(i)));
+        }
+
+        // Random access
+        for (int i = 0; i < 100; i++) {
+            bh.consume(list.get(i % list.size()));
+        }
+
+        // Modify
+        for (int i = 0; i < 50; i++) {
+            list.set(i, new Counter());
+        }
+    }
+
+    @Benchmark
+    public void objectListPreAllocated_mixedWorkload(PopulatedState state, Blackhole bh) {
         ObjectList<Counter> list = ObjectList.<Counter>builder()
                                              .preAllocate(Counter::new)
                                              .disableIteratorPool()
@@ -282,7 +363,7 @@ public class ObjectListBenchmarks {
     }
 
     @Benchmark
-    public void arrayList_mixedWorkload(PopulatedState state, Blackhole bh) {
+    public void jdkList_mixedWorkload(PopulatedState state, Blackhole bh) {
         ArrayList<Counter> list = new ArrayList<>(100);
 
         // Add

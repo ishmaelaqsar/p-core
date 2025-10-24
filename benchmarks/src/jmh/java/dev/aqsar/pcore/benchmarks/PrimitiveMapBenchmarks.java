@@ -1,7 +1,6 @@
 package dev.aqsar.pcore.benchmarks;
 
 import dev.aqsar.pcore.collections.Int2IntHashMap;
-import dev.aqsar.pcore.collections.Long2LongHashMap;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -23,16 +22,10 @@ public class PrimitiveMapBenchmarks {
 
     private int[] intKeys;
     private int[] intValues;
-    private long[] longKeys;
-    private long[] longValues;
 
     private Int2IntHashMap myIntMap;
     private org.agrona.collections.Int2IntHashMap agronaIntMap;
     private Map<Integer, Integer> jdkIntMap;
-
-    private Long2LongHashMap myLongMap;
-    private org.agrona.collections.Long2LongHashMap agronaLongMap;
-    private Map<Long, Long> jdkLongMap;
 
     @Setup(Level.Trial)
     public void setupData() {
@@ -44,13 +37,6 @@ public class PrimitiveMapBenchmarks {
             intKeys[i] = random.nextInt();
             intValues[i] = random.nextInt();
         }
-
-        longKeys = new long[size];
-        longValues = new long[size];
-        for (int i = 0; i < size; i++) {
-            longKeys[i] = random.nextLong();
-            longValues[i] = random.nextLong();
-        }
     }
 
     @Setup(Level.Invocation)
@@ -58,10 +44,6 @@ public class PrimitiveMapBenchmarks {
         myIntMap = Int2IntHashMap.builder().initialCapacity(size).build();
         agronaIntMap = new org.agrona.collections.Int2IntHashMap(Integer.MIN_VALUE);
         jdkIntMap = new HashMap<>(size);
-
-        myLongMap = Long2LongHashMap.builder().initialCapacity(size).build();
-        agronaLongMap = new org.agrona.collections.Long2LongHashMap(Long.MIN_VALUE);
-        jdkLongMap = new HashMap<>(size);
     }
 
     @Benchmark
@@ -89,30 +71,6 @@ public class PrimitiveMapBenchmarks {
     }
 
     @Benchmark
-    public Long2LongHashMap myLongMap_put() {
-        for (int i = 0; i < size; i++) {
-            myLongMap.put(longKeys[i], longValues[i]);
-        }
-        return myLongMap;
-    }
-
-    @Benchmark
-    public org.agrona.collections.Long2LongHashMap agronaLongMap_put() {
-        for (int i = 0; i < size; i++) {
-            agronaLongMap.put(longKeys[i], longValues[i]);
-        }
-        return agronaLongMap;
-    }
-
-    @Benchmark
-    public Map<Long, Long> jdkLongMap_put() {
-        for (int i = 0; i < size; i++) {
-            jdkLongMap.put(longKeys[i], longValues[i]);
-        }
-        return jdkLongMap;
-    }
-
-    @Benchmark
     public void myIntMap_get(Blackhole bh) {
         for (int i = 0; i < size; i++) {
             bh.consume(myIntMap.get(intKeys[i]));
@@ -134,27 +92,6 @@ public class PrimitiveMapBenchmarks {
     }
 
     @Benchmark
-    public void myLongMap_get(Blackhole bh) {
-        for (int i = 0; i < size; i++) {
-            bh.consume(myLongMap.get(longKeys[i]));
-        }
-    }
-
-    @Benchmark
-    public void agronaLongMap_get(Blackhole bh) {
-        for (int i = 0; i < size; i++) {
-            bh.consume(agronaLongMap.get(longKeys[i]));
-        }
-    }
-
-    @Benchmark
-    public void jdkLongMap_get(Blackhole bh) {
-        for (int i = 0; i < size; i++) {
-            bh.consume(jdkLongMap.get(longKeys[i]));
-        }
-    }
-
-    @Benchmark
     public void myIntMap_containsKey(Blackhole bh) {
         for (int i = 0; i < size; i++) {
             bh.consume(myIntMap.containsKey(intKeys[i]));
@@ -172,27 +109,6 @@ public class PrimitiveMapBenchmarks {
     public void jdkIntMap_containsKey(Blackhole bh) {
         for (int i = 0; i < size; i++) {
             bh.consume(jdkIntMap.containsKey(intKeys[i]));
-        }
-    }
-
-    @Benchmark
-    public void myLongMap_containsKey(Blackhole bh) {
-        for (int i = 0; i < size; i++) {
-            bh.consume(myLongMap.containsKey(longKeys[i]));
-        }
-    }
-
-    @Benchmark
-    public void agronaLongMap_containsKey(Blackhole bh) {
-        for (int i = 0; i < size; i++) {
-            bh.consume(agronaLongMap.containsKey(longKeys[i]));
-        }
-    }
-
-    @Benchmark
-    public void jdkLongMap_containsKey(Blackhole bh) {
-        for (int i = 0; i < size; i++) {
-            bh.consume(jdkLongMap.containsKey(longKeys[i]));
         }
     }
 
@@ -222,32 +138,6 @@ public class PrimitiveMapBenchmarks {
         }
     }
 
-    @Benchmark
-    public void myLongMap_iteration(Blackhole bh) {
-        try (var it = myLongMap.borrowIterator()) {
-            while (it.hasNext()) {
-                bh.consume(it.peekNextKey());
-                bh.consume(it.nextValue());
-            }
-        }
-    }
-
-    @Benchmark
-    public void agronaLongMap_iteration(Blackhole bh) {
-        for (var e : agronaLongMap.entrySet()) {
-            bh.consume(e.getKey());
-            bh.consume(e.getValue());
-        }
-    }
-
-    @Benchmark
-    public void jdkLongMap_iteration(Blackhole bh) {
-        for (Map.Entry<Long, Long> e : jdkLongMap.entrySet()) {
-            bh.consume(e.getKey());
-            bh.consume(e.getValue());
-        }
-    }
-
     // ==================== Remove Benchmarks ====================
 
     @Benchmark
@@ -268,27 +158,6 @@ public class PrimitiveMapBenchmarks {
     public void jdkIntMap_removeAll() {
         for (int i = 0; i < size; i++) {
             jdkIntMap.remove(intKeys[i]);
-        }
-    }
-
-    @Benchmark
-    public void myLongMap_removeAll() {
-        for (int i = 0; i < size; i++) {
-            myLongMap.remove(longKeys[i]);
-        }
-    }
-
-    @Benchmark
-    public void agronaLongMap_removeAll() {
-        for (int i = 0; i < size; i++) {
-            agronaLongMap.remove(longKeys[i]);
-        }
-    }
-
-    @Benchmark
-    public void jdkLongMap_removeAll() {
-        for (int i = 0; i < size; i++) {
-            jdkLongMap.remove(longKeys[i]);
         }
     }
 }

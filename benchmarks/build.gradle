@@ -14,12 +14,12 @@ dependencies {
 // Ensure benchmarks compile after codegen
 tasks.named('compileJava') {
     dependsOn project(':p-core-codegen').tasks.named('generateLists')
+    dependsOn project(':p-core-codegen').tasks.named('generateHashSets')
     dependsOn project(':p-core-codegen').tasks.named('generateHashMaps')
 }
 
 jmh {
-    sourceSets.addAll([sourceSets.main])
-    verbosity = 'NORMAL' // Verbosity mode. Available modes are: [SILENT, NORMAL, EXTRA]
+    verbosity = 'NORMAL' // Available modes are: [SILENT, NORMAL, EXTRA]
 }
 
 // Optional: configure the JAR task

@@ -118,7 +118,7 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
      *
      * @param value the value to add
      */
-    public void add#upper#(final #primitive# value) {
+    public void add(final #primitive# value) {
         if (size == elements.length) grow();
         elements[size++] = value;
     }
@@ -128,8 +128,8 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
      *
      * @param values the array of values to add
      */
-    public void addAll#upper#s(final #primitive#[] values) {
-        addAll#upper#s(values, 0, values.length);
+    public void addAll(final #primitive#[] values) {
+        addAll(values, 0, values.length);
     }
 
     /**
@@ -140,7 +140,7 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
      * @param length number of elements to add
      * @throws IndexOutOfBoundsException if the range is invalid
      */
-    public void addAll#upper#s(final #primitive#[] values, final int offset, final int length) {
+    public void addAll(final #primitive#[] values, final int offset, final int length) {
         Objects.checkFromIndexSize(offset, length, values.length);
         if (length == 0) return;
         ensureCapacity(size + length);
@@ -156,7 +156,7 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
      * @return the previous value at the index
      * @throws IndexOutOfBoundsException if the index is out of range
      */
-    public #primitive# set#upper#(final int index, final #primitive# value) {
+    public #primitive# set(final int index, final #primitive# value) {
         Objects.checkIndex(index, size);
         final #primitive# oldValue = elements[index];
         elements[index] = value;
@@ -169,7 +169,7 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
      * @param value the value to search for
      * @return index of the first occurrence, or -1 if not found
      */
-    public int indexOf#upper#(final #primitive# value) {
+    public int indexOf(final #primitive# value) {
         final #primitive#[] els = elements;
         final int s = size;
         int i = 0;
@@ -202,8 +202,8 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
      * @param value the value to check
      * @return {@code true} if the value is present, {@code false} otherwise
      */
-    public boolean contains#upper#(final #primitive# value) {
-        return indexOf#upper#(value) >= 0;
+    public boolean contains(final #primitive# value) {
+        return indexOf(value) >= 0;
     }
 
     /**
@@ -334,7 +334,7 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
      */
     @Override
     public boolean add(final #boxed# element) {
-        add#upper#(useNullValue && element == null ? nullValue : element);
+        add(useNullValue && element == null ? nullValue : element);
         return true;
     }
 
@@ -350,7 +350,7 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
      */
     @Override
     public #boxed# set(final int index, final #boxed# element) {
-        final #primitive# oldValue = set#upper#(index, useNullValue && element == null ? nullValue : element);
+        final #primitive# oldValue = set(index, useNullValue && element == null ? nullValue : element);
         return useNullValue && oldValue == nullValue ? null : oldValue;
     }
 
@@ -379,8 +379,8 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
      */
     @Override
     public int indexOf(final Object o) {
-        if (useNullValue && o == null) return indexOf#upper#(nullValue);
-        if (o instanceof #boxed#) return indexOf#upper#((#boxed#) o);
+        if (useNullValue && o == null) return indexOf(nullValue);
+        if (o instanceof #boxed#) return indexOf((#primitive#) o);
         return -1;
     }
 
@@ -507,19 +507,19 @@ public final class #upper#List extends AbstractList<#boxed#> implements List<#bo
         public boolean hasNext() { return cursor < size; }
         public boolean hasPrevious() { return cursor > 0; }
 
-        public #primitive# next#upper#() {
+        public #primitive# next() {
             if (cursor >= size) throw new NoSuchElementException();
             lastRet = cursor;
             return elements[cursor++];
         }
 
-        public #primitive# previous#upper#() {
+        public #primitive# previous() {
             if (cursor <= 0) throw new NoSuchElementException();
             lastRet = --cursor;
             return elements[cursor];
         }
 
-        public void set#upper#(final #primitive# value) {
+        public void set(final #primitive# value) {
             if (lastRet < 0) throw new IllegalStateException();
             elements[lastRet] = value;
         }

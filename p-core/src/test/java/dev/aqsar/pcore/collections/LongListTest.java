@@ -33,9 +33,9 @@ class LongListTest {
         @Test
         @DisplayName("should add elements")
         void testAdd() {
-            list.addLong(10);
-            list.addLong(20);
-            list.addLong(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
 
             assertEquals(3, list.size());
             assertEquals(10, list.getLong(0));
@@ -57,8 +57,8 @@ class LongListTest {
         @Test
         @DisplayName("should get elements")
         void testGet() {
-            list.addLong(100);
-            list.addLong(200);
+            list.add(100);
+            list.add(200);
 
             assertEquals(100, list.getLong(0));
             assertEquals(200, list.getLong(1));
@@ -67,7 +67,7 @@ class LongListTest {
         @Test
         @DisplayName("should throw on invalid index for get")
         void testGetInvalidIndex() {
-            list.addLong(1);
+            list.add(1);
             assertThrows(IndexOutOfBoundsException.class, () -> list.getLong(-1));
             assertThrows(IndexOutOfBoundsException.class, () -> list.getLong(1));
             assertThrows(IndexOutOfBoundsException.class, () -> list.getLong(100));
@@ -76,8 +76,8 @@ class LongListTest {
         @Test
         @DisplayName("should set elements")
         void testSet() {
-            list.addLong(50);
-            long old = list.setLong(0, 75);
+            list.add(50);
+            long old = list.set(0, 75);
 
             assertEquals(50, old);
             assertEquals(75, list.getLong(0));
@@ -96,17 +96,17 @@ class LongListTest {
         @Test
         @DisplayName("should throw on invalid index for set")
         void testSetInvalidIndex() {
-            list.addLong(1);
-            assertThrows(IndexOutOfBoundsException.class, () -> list.setLong(-1, 0));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.setLong(1, 0));
+            list.add(1);
+            assertThrows(IndexOutOfBoundsException.class, () -> list.set(-1, 0));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.set(1, 0));
         }
 
         @Test
         @DisplayName("should remove elements")
         void testRemove() {
-            list.addLong(10);
-            list.addLong(20);
-            list.addLong(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
 
             long removed = list.remove(1);
 
@@ -119,8 +119,8 @@ class LongListTest {
         @Test
         @DisplayName("should remove last element")
         void testRemoveLast() {
-            list.addLong(10);
-            list.addLong(20);
+            list.add(10);
+            list.add(20);
 
             list.remove(1);
 
@@ -131,9 +131,9 @@ class LongListTest {
         @Test
         @DisplayName("should remove first element")
         void testRemoveFirst() {
-            list.addLong(10);
-            list.addLong(20);
-            list.addLong(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
 
             list.remove(0);
 
@@ -145,9 +145,9 @@ class LongListTest {
         @Test
         @DisplayName("should clear list")
         void testClear() {
-            list.addLong(1);
-            list.addLong(2);
-            list.addLong(3);
+            list.add(1);
+            list.add(2);
+            list.add(3);
 
             list.clear();
 
@@ -170,21 +170,21 @@ class LongListTest {
         @Test
         @DisplayName("should find element")
         void testIndexOf() {
-            list.addLong(100);
-            list.addLong(200);
-            list.addLong(300);
+            list.add(100);
+            list.add(200);
+            list.add(300);
 
-            assertEquals(0, list.indexOfLong(100));
-            assertEquals(1, list.indexOfLong(200));
-            assertEquals(2, list.indexOfLong(300));
-            assertEquals(-1, list.indexOfLong(999));
+            assertEquals(0, list.indexOf(100));
+            assertEquals(1, list.indexOf(200));
+            assertEquals(2, list.indexOf(300));
+            assertEquals(-1, list.indexOf(999));
         }
 
         @Test
         @DisplayName("should find boxed element")
         void testIndexOfBoxed() {
-            list.addLong(100);
-            list.addLong(200);
+            list.add(100);
+            list.add(200);
 
             assertEquals(0, list.indexOf(100L));
             assertEquals(1, list.indexOf(200L));
@@ -194,7 +194,7 @@ class LongListTest {
         @Test
         @DisplayName("should return -1 for wrong type in indexOf")
         void testIndexOfWrongType() {
-            list.addLong(100);
+            list.add(100);
 
             assertEquals(-1, list.indexOf("not a number"));
             assertEquals(-1, list.indexOf(new Object()));
@@ -203,12 +203,12 @@ class LongListTest {
         @Test
         @DisplayName("should test contains")
         void testContains() {
-            list.addLong(50);
-            list.addLong(100);
+            list.add(50);
+            list.add(100);
 
-            assertTrue(list.containsLong(50));
+            assertTrue(list.contains(50));
             assertTrue(list.contains(100L));
-            assertFalse(list.containsLong(150));
+            assertFalse(list.contains(150));
             assertFalse(list.contains(999L));
         }
 
@@ -217,24 +217,24 @@ class LongListTest {
         void testLargeListSearch() {
             // Add more than 8 elements to test unrolled loop
             for (int i = 0; i < 20; i++) {
-                list.addLong((i * 10));
+                list.add((i * 10));
             }
 
-            assertEquals(0, list.indexOfLong(0));
-            assertEquals(10, list.indexOfLong(100L));
-            assertEquals(19, list.indexOfLong(190L));
-            assertEquals(-1, list.indexOfLong(200L));
+            assertEquals(0, list.indexOf(0));
+            assertEquals(10, list.indexOf(100L));
+            assertEquals(19, list.indexOf(190L));
+            assertEquals(-1, list.indexOf(200L));
         }
 
         @Test
         @DisplayName("should find first occurrence")
         void testIndexOfFirstOccurrence() {
-            list.addLong(10);
-            list.addLong(20);
-            list.addLong(10);
-            list.addLong(30);
+            list.add(10);
+            list.add(20);
+            list.add(10);
+            list.add(30);
 
-            assertEquals(0, list.indexOfLong(10));
+            assertEquals(0, list.indexOf(10));
         }
     }
 
@@ -253,7 +253,7 @@ class LongListTest {
         @DisplayName("should add all from array")
         void testAddAllArray() {
             long[] values = {1, 2, 3, 4};
-            list.addAllLongs(values);
+            list.addAll(values);
 
             assertEquals(4, list.size());
             assertEquals(1, list.getLong(0));
@@ -264,7 +264,7 @@ class LongListTest {
         @DisplayName("should add all from array with offset")
         void testAddAllArrayWithOffset() {
             long[] values = {10, 20, 30, 40, 50};
-            list.addAllLongs(values, 1, 3);
+            list.addAll(values, 1, 3);
 
             assertEquals(3, list.size());
             assertEquals(20, list.getLong(0));
@@ -276,7 +276,7 @@ class LongListTest {
         @DisplayName("should handle empty addAll")
         void testAddAllEmpty() {
             long[] empty = {};
-            list.addAllLongs(empty);
+            list.addAll(empty);
             assertEquals(0, list.size());
         }
 
@@ -284,7 +284,7 @@ class LongListTest {
         @DisplayName("should handle zero-length addAll")
         void testAddAllZeroLength() {
             long[] values = {1, 2, 3};
-            list.addAllLongs(values, 1, 0);
+            list.addAll(values, 1, 0);
             assertEquals(0, list.size());
         }
 
@@ -293,17 +293,17 @@ class LongListTest {
         void testAddAllInvalidRange() {
             long[] values = {1, 2, 3};
 
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllLongs(values, -1, 2));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllLongs(values, 0, 10));
-            assertThrows(IndexOutOfBoundsException.class, () -> list.addAllLongs(values, 2, 5));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAll(values, -1, 2));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAll(values, 0, 10));
+            assertThrows(IndexOutOfBoundsException.class, () -> list.addAll(values, 2, 5));
         }
 
         @Test
         @DisplayName("should convert to array")
         void testToArray() {
-            list.addLong(111);
-            list.addLong(222);
-            list.addLong(333);
+            list.add(111);
+            list.add(222);
+            list.add(333);
 
             long[] array = list.toLongArray();
 
@@ -316,7 +316,7 @@ class LongListTest {
         @Test
         @DisplayName("should return independent array copy")
         void testToArrayIndependent() {
-            list.addLong(10);
+            list.add(10);
 
             long[] array = list.toLongArray();
             array[0] = 999;
@@ -382,7 +382,7 @@ class LongListTest {
             list.add(20L);
 
             assertEquals(1, list.indexOf(null));
-            assertEquals(1, list.indexOfLong(-999));
+            assertEquals(1, list.indexOf(-999));
         }
     }
 
@@ -396,7 +396,7 @@ class LongListTest {
             LongList list = LongList.builder().initialCapacity(2).build();
 
             for (int i = 0; i < 100; i++) {
-                list.addLong(i);
+                list.add(i);
             }
 
             assertEquals(100, list.size());
@@ -411,7 +411,7 @@ class LongListTest {
             LongList list = LongList.builder().initialCapacity(100).build();
 
             for (int i = 0; i < 50; i++) {
-                list.addLong(i);
+                list.add(i);
             }
 
             assertEquals(50, list.size());
@@ -422,7 +422,7 @@ class LongListTest {
         void testMinimumCapacity() {
             LongList list = LongList.builder().initialCapacity(0).build();
 
-            list.addLong(42);
+            list.add(42);
             assertEquals(1, list.size());
             assertEquals(42, list.getLong(0));
         }
@@ -435,7 +435,7 @@ class LongListTest {
             list.ensureCapacity(1000);
 
             for (int i = 0; i < 1000; i++) {
-                list.addLong(i);
+                list.add(i);
             }
 
             assertEquals(1000, list.size());
@@ -448,7 +448,7 @@ class LongListTest {
 
             // Should use 1.5x growth instead of 2x
             for (int i = 0; i < 100; i++) {
-                list.addLong(i);
+                list.add(i);
             }
 
             assertEquals(100, list.size());
@@ -464,9 +464,9 @@ class LongListTest {
         @BeforeEach
         void setUp() {
             list = LongList.builder().build();
-            list.addLong(10);
-            list.addLong(20);
-            list.addLong(30);
+            list.add(10);
+            list.add(20);
+            list.add(30);
         }
 
         @Test
@@ -487,9 +487,9 @@ class LongListTest {
         void testIterateForward() {
             try (LongList.LongListIterator iter = list.borrowIterator()) {
                 assertTrue(iter.hasNext());
-                assertEquals(10, iter.nextLong());
-                assertEquals(20, iter.nextLong());
-                assertEquals(30, iter.nextLong());
+                assertEquals(10, iter.next());
+                assertEquals(20, iter.next());
+                assertEquals(30, iter.next());
                 assertFalse(iter.hasNext());
             }
         }
@@ -499,9 +499,9 @@ class LongListTest {
         void testIterateBackward() {
             try (LongList.LongListIterator iter = list.borrowIterator(3)) {
                 assertTrue(iter.hasPrevious());
-                assertEquals(30, iter.previousLong());
-                assertEquals(20, iter.previousLong());
-                assertEquals(10, iter.previousLong());
+                assertEquals(30, iter.previous());
+                assertEquals(20, iter.previous());
+                assertEquals(10, iter.previous());
                 assertFalse(iter.hasPrevious());
             }
         }
@@ -510,8 +510,8 @@ class LongListTest {
         @DisplayName("should set during iteration")
         void testIteratorSet() {
             try (LongList.LongListIterator iter = list.borrowIterator()) {
-                iter.nextLong();
-                iter.setLong(99);
+                iter.next();
+                iter.set(99);
             }
 
             assertEquals(99, list.getLong(0));
@@ -521,7 +521,7 @@ class LongListTest {
         @DisplayName("should throw when setting without next/previous")
         void testIteratorSetWithoutMoving() {
             try (LongList.LongListIterator iter = list.borrowIterator()) {
-                assertThrows(IllegalStateException.class, () -> iter.setLong(0));
+                assertThrows(IllegalStateException.class, () -> iter.set(0));
             }
         }
 
@@ -548,7 +548,7 @@ class LongListTest {
 
             try (LongList.LongListIterator iter = list.borrowIterator()) {
                 assertEquals(7, list.availableIteratorCount());
-                iter.nextLong();
+                iter.next();
             }
 
             assertEquals(8, list.availableIteratorCount());
@@ -558,10 +558,10 @@ class LongListTest {
         @DisplayName("should throw on next when at end")
         void testNextPastEnd() {
             try (LongList.LongListIterator iter = list.borrowIterator()) {
-                iter.nextLong();
-                iter.nextLong();
-                iter.nextLong();
-                assertThrows(NoSuchElementException.class, iter::nextLong);
+                iter.next();
+                iter.next();
+                iter.next();
+                assertThrows(NoSuchElementException.class, iter::next);
             }
         }
 
@@ -569,7 +569,7 @@ class LongListTest {
         @DisplayName("should throw on previous when at start")
         void testPreviousPastStart() {
             try (LongList.LongListIterator iter = list.borrowIterator(0)) {
-                assertThrows(NoSuchElementException.class, iter::previousLong);
+                assertThrows(NoSuchElementException.class, iter::previous);
             }
         }
 
@@ -580,7 +580,7 @@ class LongListTest {
                 assertEquals(0, iter.nextIndex());
                 assertEquals(-1, iter.previousIndex());
 
-                iter.nextLong();
+                iter.next();
 
                 assertEquals(1, iter.nextIndex());
                 assertEquals(0, iter.previousIndex());
@@ -594,8 +594,8 @@ class LongListTest {
                 assertEquals(1, iter.nextIndex());
                 assertEquals(0, iter.previousIndex());
 
-                assertEquals(20, iter.nextLong());
-                assertEquals(20, iter.previousLong());
+                assertEquals(20, iter.next());
+                assertEquals(20, iter.previous());
             }
         }
 
@@ -603,7 +603,7 @@ class LongListTest {
         @DisplayName("should not return wrong iterator")
         void testReturnWrongIterator() {
             LongList list2 = LongList.builder().build();
-            list2.addLong(1);
+            list2.add(1);
 
             LongList.LongListIterator iter = list.borrowIterator();
 
@@ -623,9 +623,9 @@ class LongListTest {
         @BeforeEach
         void setUp() {
             list = LongList.builder().build();
-            list.addLong(100);
-            list.addLong(200);
-            list.addLong(300);
+            list.add(100);
+            list.add(200);
+            list.add(300);
         }
 
         @Test
@@ -762,8 +762,8 @@ class LongListTest {
 
             assertTrue(list.isEmpty());
             assertEquals(0, list.size());
-            assertEquals(-1, list.indexOfLong(0));
-            assertFalse(list.containsLong(0));
+            assertEquals(-1, list.indexOf(0));
+            assertFalse(list.contains(0));
 
             long[] array = list.toLongArray();
             assertEquals(0, array.length);
@@ -773,11 +773,11 @@ class LongListTest {
         @DisplayName("should handle single element")
         void testSingleElement() {
             LongList list = LongList.builder().build();
-            list.addLong(42);
+            list.add(42);
 
             assertEquals(1, list.size());
             assertEquals(42, list.getLong(0));
-            assertEquals(0, list.indexOfLong(42));
+            assertEquals(0, list.indexOf(42));
 
             list.clear();
             assertTrue(list.isEmpty());
@@ -787,24 +787,24 @@ class LongListTest {
         @DisplayName("should handle repeated elements")
         void testRepeatedElements() {
             LongList list = LongList.builder().build();
-            list.addLong(7);
-            list.addLong(7);
-            list.addLong(7);
+            list.add(7);
+            list.add(7);
+            list.add(7);
 
             assertEquals(3, list.size());
-            assertEquals(0, list.indexOfLong(7));
+            assertEquals(0, list.indexOf(7));
         }
 
         @Test
         @DisplayName("should handle zero value")
         void testZeroValue() {
             LongList list = LongList.builder().build();
-            list.addLong(0);
-            list.addLong(1);
-            list.addLong(0);
+            list.add(0);
+            list.add(1);
+            list.add(0);
 
-            assertEquals(0, list.indexOfLong(0));
-            assertTrue(list.containsLong(0));
+            assertEquals(0, list.indexOf(0));
+            assertTrue(list.contains(0));
         }
     }
 
@@ -819,14 +819,14 @@ class LongListTest {
 
             // Add elements
             for (int i = 0; i < 10; i++) {
-                list.addLong((i * 10));
+                list.add((i * 10));
             }
 
             // Search
-            assertEquals(5, list.indexOfLong(50));
+            assertEquals(5, list.indexOf(50));
 
             // Modify
-            list.setLong(5, 999);
+            list.set(5, 999);
             assertEquals(999, list.getLong(5));
 
             // Remove
@@ -838,7 +838,7 @@ class LongListTest {
             int count = 0;
             try (LongList.LongListIterator iter = list.borrowIterator()) {
                 while (iter.hasNext()) {
-                    iter.nextLong();
+                    iter.next();
                     count++;
                 }
             }
@@ -846,7 +846,7 @@ class LongListTest {
 
             // Bulk add
             long[] more = {1000, 2000};
-            list.addAllLongs(more);
+            list.addAll(more);
             assertEquals(11, list.size());
 
             // Clear
@@ -861,13 +861,13 @@ class LongListTest {
 
             // Add many elements
             for (int i = 0; i < 10000; i++) {
-                list.addLong(i);
+                list.add(i);
             }
 
             assertEquals(10000, list.size());
 
             // Search in large list
-            assertEquals(5000, list.indexOfLong(5000));
+            assertEquals(5000, list.indexOf(5000));
 
             // Remove from middle repeatedly
             for (int i = 0; i < 100; i++) {
