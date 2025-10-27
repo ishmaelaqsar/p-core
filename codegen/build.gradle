@@ -68,10 +68,31 @@ tasks.register('generateHashMaps', JavaExec) {
     }
 }
 
+tasks.register('generateTreeMaps', JavaExec) {
+    group = 'build'
+    description = 'Generates primitive treemap classes for p-core.'
+
+    dependsOn tasks.named('compileJava')
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'dev.aqsar.pcore.generator.TreeMapGenerator'
+
+    args = [generatedSourcesDir.absolutePath]
+
+    outputs.dir(generatedSourcesDir)
+
+    doFirst {
+        if (!generatedSourcesDir.exists()) {
+            generatedSourcesDir.mkdirs()
+        }
+    }
+}
+
 // Make the :p-core compilation depend on generated sources
 project(':p-core').sourceSets.main.java.srcDir(generatedSourcesDir)
 project(':p-core').tasks.named('compileJava').configure {
     dependsOn tasks.named('generateLists')
     dependsOn tasks.named('generateHashSets')
     dependsOn tasks.named('generateHashMaps')
+    dependsOn tasks.named('generateTreeMaps')
 }

@@ -16,4 +16,5 @@ tasks.named('compileJava') {
     dependsOn project(':p-core-codegen').tasks.named('generateLists')
     dependsOn project(':p-core-codegen').tasks.named('generateHashSets')
     dependsOn project(':p-core-codegen').tasks.named('generateHashMaps')
+    dependsOn project(':p-core-codegen').tasks.named('generateTreeMaps')
 }
