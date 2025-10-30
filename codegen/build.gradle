@@ -30,7 +30,7 @@ tasks.register('generateLists', JavaExec) {
 
 tasks.register('generateHashSets', JavaExec) {
     group = 'build'
-    description = 'Generates primitive hashsets classes for p-core.'
+    description = 'Generates primitive hashset classes for p-core.'
 
     dependsOn tasks.named('compileJava')
 
@@ -56,6 +56,26 @@ tasks.register('generateHashMaps', JavaExec) {
 
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'dev.aqsar.pcore.generator.HashMapGenerator'
+
+    args = [generatedSourcesDir.absolutePath]
+
+    outputs.dir(generatedSourcesDir)
+
+    doFirst {
+        if (!generatedSourcesDir.exists()) {
+            generatedSourcesDir.mkdirs()
+        }
+    }
+}
+
+tasks.register('generateTreeSets', JavaExec) {
+    group = 'build'
+    description = 'Generates primitive treeset classes for p-core.'
+
+    dependsOn tasks.named('compileJava')
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'dev.aqsar.pcore.generator.TreeSetGenerator'
 
     args = [generatedSourcesDir.absolutePath]
 
@@ -94,5 +114,6 @@ project(':p-core').tasks.named('compileJava').configure {
     dependsOn tasks.named('generateLists')
     dependsOn tasks.named('generateHashSets')
     dependsOn tasks.named('generateHashMaps')
+    dependsOn tasks.named('generateTreeSets')
     dependsOn tasks.named('generateTreeMaps')
 }

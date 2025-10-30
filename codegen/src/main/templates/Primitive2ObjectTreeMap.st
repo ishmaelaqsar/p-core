@@ -43,7 +43,6 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
 
     // Free list for recycling nodes
     private int freeListHead = NULL_NODE;
-    private int nextNodeIndex = 0;
 
     // Iterator pool
     private final Object[] iteratorPool;
@@ -85,7 +84,6 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
         }
         rightChild[capacity - 1] = NULL_NODE;
         freeListHead = 0;
-        nextNodeIndex = 0;
     }
 
     // ------------------- Node Management -------------------
@@ -96,8 +94,6 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
         if (freeListHead != NULL_NODE) {
             nodeIndex = freeListHead;
             freeListHead = rightChild[freeListHead];
-        } else if (nextNodeIndex < capacity) {
-            nodeIndex = nextNodeIndex++;
         } else {
             grow();
             return allocateNode(key, value, parentNode);
@@ -122,6 +118,7 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
     }
 
     private void grow() {
+        final int oldCapacity = capacity;
         final int newCapacity = capacity * 2;
 
         keys = Arrays.copyOf(keys, newCapacity);
@@ -131,17 +128,23 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
         parent = Arrays.copyOf(parent, newCapacity);
         color = Arrays.copyOf(color, newCapacity);
 
-        for (int i = capacity; i < newCapacity - 1; i++) {
+        for (int i = oldCapacity; i < newCapacity - 1; i++) {
             rightChild[i] = i + 1;
         }
         rightChild[newCapacity - 1] = freeListHead;
-        freeListHead = capacity;
+        freeListHead = oldCapacity;
 
         capacity = newCapacity;
     }
 
     // ------------------- Primitive Operations -------------------
 
+    /**
+     * Associates a primitive key with an object value.
+     *
+     * @param key the primitive key
+     * @param value the object value
+     */
     public void put(final #primitiveKey# key, final V value) {
         #null_key_check#
         if (value == null) throw new IllegalArgumentException("Null values are not permitted");
@@ -184,24 +187,48 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
         modCount++;
     }
 
+    /**
+     * Retrieves the value for a primitive key.
+     *
+     * @param key the key to lookup
+     * @return the associated value, or null if the key is not present
+     */
     public V get(final #primitiveKey# key) {
         #null_key_check#
         final int node = getNode(key);
         return node != NULL_NODE ? values[node] : null;
     }
 
+    /**
+     * Retrieves the value for a key, or returns the default if not found.
+     *
+     * @param key the key to lookup
+     * @param defaultValue the default value if key is absent
+     * @return the value associated with the key, or defaultValue
+     */
     public V getOrDefault(final #primitiveKey# key, final V defaultValue) {
         #null_key_check#
         final int node = getNode(key);
         return node != NULL_NODE ? values[node] : defaultValue;
     }
 
+    /**
+     * Checks if a primitive key exists in the map.
+     *
+     * @param key the key to check
+     * @return true if the key is present, false otherwise
+     */
     public boolean containsKey(final #primitiveKey# key) {
         #null_key_check#
         return getNode(key) != NULL_NODE;
     }
 
-    @Override
+    /**
+     * Checks if a value exists in the map.
+     *
+     * @param value the value to check
+     * @return true if the value is present, false otherwise
+     */
     public boolean containsValue(final Object value) {
         if (value == null) return false;
         return containsValueInSubtree(root, value);
@@ -213,6 +240,12 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
         return containsValueInSubtree(leftChild[node], value) || containsValueInSubtree(rightChild[node], value);
     }
 
+    /**
+     * Removes a key-value mapping by primitive key.
+     *
+     * @param key the key to remove
+     * @return the previous value associated with the key, or null if not present
+     */
     public V remove(final #primitiveKey# key) {
         #null_key_check#
         final int node = getNode(key);
@@ -223,40 +256,315 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
         return oldValue;
     }
 
+    /**
+     * Removes the entry for the primitive key only if it maps to the given value.
+     *
+     * @param key the primitive key
+     * @param value the expected value
+     * @return true if the entry was removed
+     */
+    public boolean remove(final #primitiveKey# key, final Object value) {
+        #null_key_check#
+        if (value == null) return false;
+        final int node = getNode(key);
+        if (node == NULL_NODE) return false;
+        if (!value.equals(values[node])) return false;
+        deleteNode(node);
+        return true;
+    }
+
+    /**
+     * Puts the key-value pair only if the key is not already present.
+     *
+     * @param key the primitive key
+     * @param value the value
+     * @return true if the value was inserted, false if key already existed
+     */
+    public boolean putIfAbsent(final #primitiveKey# key, final V value) {
+        #null_key_check#
+        if (value == null) throw new IllegalArgumentException("Null values are not permitted");
+        final int node = getNode(key);
+        if (node != NULL_NODE) {
+            return false;
+        }
+        put(key, value);
+        return true;
+    }
+
+    /**
+     * Replaces the entry for the primitive key only if currently mapped to the old value.
+     *
+     * @param key the primitive key
+     * @param oldValue the expected current value
+     * @param newValue the new value
+     * @return true if the value was replaced
+     */
+    public boolean replace(final #primitiveKey# key, final V oldValue, final V newValue) {
+        #null_key_check#
+        if (oldValue == null || newValue == null) throw new IllegalArgumentException("Null values are not permitted");
+        final int node = getNode(key);
+        if (node == NULL_NODE) return false;
+        if (!oldValue.equals(values[node])) return false;
+        values[node] = newValue;
+        modCount++;
+        return true;
+    }
+
+    /**
+     * Replaces the entry for the primitive key only if currently mapped to some value.
+     *
+     * @param key the primitive key
+     * @param value the new value
+     * @return the previous value, or null if absent
+     */
+    public V replace(final #primitiveKey# key, final V value) {
+        #null_key_check#
+        if (value == null) throw new IllegalArgumentException("Null values are not permitted");
+        final int node = getNode(key);
+        if (node == NULL_NODE) return null;
+        final V oldValue = values[node];
+        values[node] = value;
+        modCount++;
+        return oldValue;
+    }
+
+    /**
+     * Returns the smallest key in the map.
+     *
+     * @return the minimum key, or throws NoSuchElementException if empty
+     */
     public #primitiveKey# first#upperKey#Key() {
         if (root == NULL_NODE) throw new NoSuchElementException();
         return keys[minimum(root)];
     }
 
+    /**
+     * Returns the largest key in the map.
+     *
+     * @return the maximum key, or throws NoSuchElementException if empty
+     */
     public #primitiveKey# last#upperKey#Key() {
         if (root == NULL_NODE) throw new NoSuchElementException();
         return keys[maximum(root)];
     }
 
+    /**
+     * Returns the value associated with the first (lowest) key.
+     *
+     * @return the first value, or null if the map is empty
+     */
+    public V first#upperKey#Value() {
+        if (root == NULL_NODE) return null;
+        return values[minimum(root)];
+    }
+
+    /**
+     * Returns the value associated with the last (highest) key.
+     *
+     * @return the last value, or null if the map is empty
+     */
+    public V last#upperKey#Value() {
+        if (root == NULL_NODE) return null;
+        return values[maximum(root)];
+    }
+
+    /**
+     * Returns the first (lowest) entry in the map.
+     *
+     * @return the first entry, or null if the map is empty
+     */
+    public Entry<#boxedKey#, V> first#upperKey#Entry() {
+        if (root == NULL_NODE) return null;
+        final int node = minimum(root);
+        return new SimpleEntry<>(keys[node], values[node]);
+    }
+
+    /**
+     * Returns the last (highest) entry in the map.
+     *
+     * @return the last entry, or null if the map is empty
+     */
+    public Entry<#boxedKey#, V> last#upperKey#Entry() {
+        if (root == NULL_NODE) return null;
+        final int node = maximum(root);
+        return new SimpleEntry<>(keys[node], values[node]);
+    }
+
+    /**
+     * Removes and returns the first (lowest) entry in the map.
+     *
+     * @return the removed first entry, or null if the map is empty
+     */
+    public Entry<#boxedKey#, V> pollFirst#upperKey#Entry() {
+        if (root == NULL_NODE) return null;
+        final int node = minimum(root);
+        final Entry<#boxedKey#, V> entry = new SimpleEntry<>(keys[node], values[node]);
+        deleteNode(node);
+        return entry;
+    }
+
+    /**
+     * Removes and returns the last (highest) entry in the map.
+     *
+     * @return the removed last entry, or null if the map is empty
+     */
+    public Entry<#boxedKey#, V> pollLast#upperKey#Entry() {
+        if (root == NULL_NODE) return null;
+        final int node = maximum(root);
+        final Entry<#boxedKey#, V> entry = new SimpleEntry<>(keys[node], values[node]);
+        deleteNode(node);
+        return entry;
+    }
+
+    /**
+     * Returns the greatest key less than or equal to the given key.
+     *
+     * @param key the key
+     * @return the floor key, or null if no such key exists
+     */
     public #boxedKey# floorKey(final #primitiveKey# key) {
         #null_key_check#
         final int node = floorNode(key);
         return node != NULL_NODE ? keys[node] : null;
     }
 
+    /**
+     * Returns the least key greater than or equal to the given key.
+     *
+     * @param key the key
+     * @return the ceiling key, or null if no such key exists
+     */
     public #boxedKey# ceilingKey(final #primitiveKey# key) {
         #null_key_check#
         final int node = ceilingNode(key);
         return node != NULL_NODE ? keys[node] : null;
     }
 
+    /**
+     * Returns the greatest key strictly less than the given key.
+     *
+     * @param key the key
+     * @return the lower key, or null if no such key exists
+     */
     public #boxedKey# lowerKey(final #primitiveKey# key) {
         #null_key_check#
         final int node = lowerNode(key);
         return node != NULL_NODE ? keys[node] : null;
     }
 
+    /**
+     * Returns the least key strictly greater than the given key.
+     *
+     * @param key the key
+     * @return the higher key, or null if no such key exists
+     */
     public #boxedKey# higherKey(final #primitiveKey# key) {
         #null_key_check#
         final int node = higherNode(key);
         return node != NULL_NODE ? keys[node] : null;
     }
 
+    /**
+     * Returns the value associated with the greatest key less than or equal to the given key.
+     *
+     * @param key the key
+     * @return the floor value, or null if no such key exists
+     */
+    public V floorValue(final #primitiveKey# key) {
+        #null_key_check#
+        final int node = floorNode(key);
+        return node != NULL_NODE ? values[node] : null;
+    }
+
+    /**
+     * Returns the value associated with the least key greater than or equal to the given key.
+     *
+     * @param key the key
+     * @return the ceiling value, or null if no such key exists
+     */
+    public V ceilingValue(final #primitiveKey# key) {
+        #null_key_check#
+        final int node = ceilingNode(key);
+        return node != NULL_NODE ? values[node] : null;
+    }
+
+    /**
+     * Returns the value associated with the greatest key strictly less than the given key.
+     *
+     * @param key the key
+     * @return the lower value, or null if no such key exists
+     */
+    public V lowerValue(final #primitiveKey# key) {
+        #null_key_check#
+        final int node = lowerNode(key);
+        return node != NULL_NODE ? values[node] : null;
+    }
+
+    /**
+     * Returns the value associated with the least key strictly greater than the given key.
+     *
+     * @param key the key
+     * @return the higher value, or null if no such key exists
+     */
+    public V higherValue(final #primitiveKey# key) {
+        #null_key_check#
+        final int node = higherNode(key);
+        return node != NULL_NODE ? values[node] : null;
+    }
+
+    /**
+     * Returns the greatest key-value entry less than or equal to the given key.
+     *
+     * @param key the key
+     * @return the floor entry, or null if no such entry exists
+     */
+    public Entry<#boxedKey#, V> floor#upperKey#Entry(final #primitiveKey# key) {
+        #null_key_check#
+        final int node = floorNode(key);
+        return node != NULL_NODE ? new SimpleEntry<>(keys[node], values[node]) : null;
+    }
+
+    /**
+     * Returns the least key-value entry greater than or equal to the given key.
+     *
+     * @param key the key
+     * @return the ceiling entry, or null if no such entry exists
+     */
+    public Entry<#boxedKey#, V> ceiling#upperKey#Entry(final #primitiveKey# key) {
+        #null_key_check#
+        final int node = ceilingNode(key);
+        return node != NULL_NODE ? new SimpleEntry<>(keys[node], values[node]) : null;
+    }
+
+    /**
+     * Returns the greatest key-value entry strictly less than the given key.
+     *
+     * @param key the key
+     * @return the lower entry, or null if no such entry exists
+     */
+    public Entry<#boxedKey#, V> lower#upperKey#Entry(final #primitiveKey# key) {
+        #null_key_check#
+        final int node = lowerNode(key);
+        return node != NULL_NODE ? new SimpleEntry<>(keys[node], values[node]) : null;
+    }
+
+    /**
+     * Returns the least key-value entry strictly greater than the given key.
+     *
+     * @param key the key
+     * @return the higher entry, or null if no such entry exists
+     */
+    public Entry<#boxedKey#, V> higher#upperKey#Entry(final #primitiveKey# key) {
+        #null_key_check#
+        final int node = higherNode(key);
+        return node != NULL_NODE ? new SimpleEntry<>(keys[node], values[node]) : null;
+    }
+
+    /**
+     * Applies a consumer to all key-value pairs in ascending key order.
+     *
+     * @param action the consumer to apply
+     */
     public void forEach#upperKey#Object(final #upperKey#ObjectConsumer<V> action) {
         Objects.requireNonNull(action);
         forEachInOrder(root, action);
@@ -378,6 +686,19 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
         int current = node;
         int p = parent[node];
         while (p != NULL_NODE && current == rightChild[p]) {
+            current = p;
+            p = parent[p];
+        }
+        return p;
+    }
+
+    private int predecessor(final int node) {
+        if (leftChild[node] != NULL_NODE) {
+            return maximum(leftChild[node]);
+        }
+        int current = node;
+        int p = parent[node];
+        while (p != NULL_NODE && current == leftChild[p]) {
             current = p;
             p = parent[p];
         }
@@ -615,6 +936,13 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
     }
 
     @Override
+    public V getOrDefault(final Object key, final V defaultValue) {
+        if (!(key instanceof #boxedKey#)) return defaultValue;
+        final V v = get((#primitiveKey#) key);
+        return v != null ? v : defaultValue;
+    }
+
+    @Override
     public boolean containsKey(final Object key) {
         if (!(key instanceof #boxedKey#)) return false;
         return containsKey((#primitiveKey#) key);
@@ -624,6 +952,42 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
     public V remove(final Object key) {
         if (!(key instanceof #boxedKey#)) return null;
         return remove((#primitiveKey#) key);
+    }
+
+    @Override
+    public boolean remove(final Object key, final Object value) {
+        if (!(key instanceof #boxedKey#)) return false;
+        return remove((#primitiveKey#) key, value);
+    }
+
+    @Override
+    public V putIfAbsent(final #boxedKey# key, final V value) {
+        if (key == null || value == null) {
+            throw new NullPointerException("Null keys and values are not supported");
+        }
+        final #primitiveKey# k = (#primitiveKey#) key;
+        final int node = getNode(k);
+        if (node != NULL_NODE) {
+            return values[node];
+        }
+        put(k, value);
+        return null;
+    }
+
+    @Override
+    public boolean replace(final #boxedKey# key, final V oldValue, final V newValue) {
+        if (key == null || oldValue == null || newValue == null) {
+            throw new NullPointerException("Null keys and values are not supported");
+        }
+        return replace((#primitiveKey#) key, oldValue, newValue);
+    }
+
+    @Override
+    public V replace(final #boxedKey# key, final V value) {
+        if (key == null || value == null) {
+            throw new NullPointerException("Null keys and values are not supported");
+        }
+        return replace((#primitiveKey#) key, value);
     }
 
     @Override
@@ -651,12 +1015,7 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
 
     @Override
     public Set<#boxedKey#> keySet() {
-        return new AbstractSet<#boxedKey#>() {
-            @Override public int size() { return #upperKey#2ObjectTreeMap.this.size(); }
-            @Override public boolean contains(final Object o) { return containsKey(o); }
-            @Override public Iterator<#boxedKey#> iterator() { return new KeyIterator(); }
-            @Override public void clear() { #upperKey#2ObjectTreeMap.this.clear(); }
-        };
+        return new KeySet(this, false);
     }
 
     @Override
@@ -719,14 +1078,14 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
     }
 
     public final class #upperKey#ObjectTreeMapIterator implements AutoCloseable {
-        private long p0, p1, p2, p3, p4, p5, p6;
+        private long p0, p1, p2, p3, p4, p5, p6; // Cache line padding
 
         private final int poolIndex;
         private int next;
         private int lastReturned;
         private int expectedModCount;
 
-        private long p8, p9, p10, p11, p12;
+        private long p8, p9, p10, p11, p12; // Cache line padding
 
         private #upperKey#ObjectTreeMapIterator(final int poolIndex) {
             this.poolIndex = poolIndex;
@@ -821,51 +1180,79 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
 
     private abstract class BaseIterator<T> implements Iterator<T> {
         int next;
-        int expectedModCount = modCount;
+        int lastReturned;
+        int expectedModCount;
 
-        BaseIterator() {
-            next = root != NULL_NODE ? minimum(root) : NULL_NODE;
+        BaseIterator(int startNode) {
+            this.expectedModCount = modCount;
+            this.next = startNode;
+            this.lastReturned = NULL_NODE;
         }
 
-        @Override
         public boolean hasNext() {
             return next != NULL_NODE;
         }
 
-        int nextNode() {
-            if (expectedModCount != modCount) {
-                throw new ConcurrentModificationException();
-            }
-            if (next == NULL_NODE) {
-                throw new NoSuchElementException();
-            }
-            final int current = next;
+        final int nextAscending() {
+            if (modCount != expectedModCount) throw new ConcurrentModificationException();
+            if (next == NULL_NODE) throw new NoSuchElementException();
+            lastReturned = next;
             next = successor(next);
-            return current;
+            return lastReturned;
+        }
+
+        final int nextDescending() {
+            if (modCount != expectedModCount) throw new ConcurrentModificationException();
+            if (next == NULL_NODE) throw new NoSuchElementException();
+            lastReturned = next;
+            next = predecessor(next);
+            return lastReturned;
+        }
+
+        public final void remove() {
+            if (lastReturned == NULL_NODE) throw new IllegalStateException();
+            if (modCount != expectedModCount) throw new ConcurrentModificationException();
+            deleteNode(lastReturned);
+            expectedModCount = modCount;
+            lastReturned = NULL_NODE;
         }
     }
 
     private final class KeyIterator extends BaseIterator<#boxedKey#> {
-        @Override
-        public #boxedKey# next() {
-            return keys[nextNode()];
-        }
+        KeyIterator() { super(root != NULL_NODE ? minimum(root) : NULL_NODE); }
+        KeyIterator(int startNode) { super(startNode); }
+        @Override public #boxedKey# next() { return keys[nextAscending()]; }
     }
 
     private final class ValueIterator extends BaseIterator<V> {
-        @Override
-        public V next() {
-            return values[nextNode()];
-        }
+        ValueIterator() { super(root != NULL_NODE ? minimum(root) : NULL_NODE); }
+        ValueIterator(int startNode) { super(startNode); }
+        @Override public V next() { return values[nextAscending()]; }
     }
 
     private final class EntryIterator extends BaseIterator<Entry<#boxedKey#, V>> {
-        @Override
-        public Entry<#boxedKey#, V> next() {
-            final int node = nextNode();
+        EntryIterator() { super(root != NULL_NODE ? minimum(root) : NULL_NODE); }
+        EntryIterator(int startNode) { super(startNode); }
+        @Override public Entry<#boxedKey#, V> next() {
+            final int node = nextAscending();
             return new SimpleEntry<>(keys[node], values[node]);
         }
     }
+
+    private final class DescendingKeyIterator extends BaseIterator<#boxedKey#> {
+        DescendingKeyIterator(int startNode) { super(startNode); }
+        @Override public #boxedKey# next() { return keys[nextDescending()]; }
+    }
+
+    private final class DescendingEntryIterator extends BaseIterator<Entry<#boxedKey#, V>> {
+        DescendingEntryIterator(int startNode) { super(startNode); }
+        @Override public Entry<#boxedKey#, V> next() {
+            final int node = nextDescending();
+            return new SimpleEntry<>(keys[node], values[node]);
+        }
+    }
+
+    // ------------------- SimpleEntry -------------------
 
     private static class SimpleEntry<K, V> implements Entry<K, V> {
         private final K key;
@@ -885,42 +1272,67 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
         }
     }
 
-    // ------------------- NavigableMap Implementation (Stub Methods) -------------------
+    // ------------------- NavigableMap Implementation -------------------
 
-    @Override public Comparator<? super #boxedKey#> comparator() { return null; }
-    @Override public #boxedKey# firstKey() { return first#upperKey#Key(); }
-    @Override public #boxedKey# lastKey() { return last#upperKey#Key(); }
-    @Override public #boxedKey# lowerKey(#boxedKey# key) { return lowerKey((#primitiveKey#) key); }
-    @Override public #boxedKey# floorKey(#boxedKey# key) { return floorKey((#primitiveKey#) key); }
-    @Override public #boxedKey# ceilingKey(#boxedKey# key) { return ceilingKey((#primitiveKey#) key); }
-    @Override public #boxedKey# higherKey(#boxedKey# key) { return higherKey((#primitiveKey#) key); }
+    @Override
+    public Comparator<? super #boxedKey#> comparator() { return null; }
+
+    @Override
+    public #boxedKey# firstKey() {
+        return first#upperKey#Key();
+    }
+
+    @Override
+    public #boxedKey# lastKey() {
+        return last#upperKey#Key();
+    }
 
     @Override
     public Entry<#boxedKey#, V> lowerEntry(final #boxedKey# key) {
-        if (key == null) return null;
+        if (key == null) throw new NullPointerException();
         final int node = lowerNode((#primitiveKey#) key);
         return node != NULL_NODE ? new SimpleEntry<>(keys[node], values[node]) : null;
     }
 
     @Override
+    public #boxedKey# lowerKey(#boxedKey# key) {
+        return lowerKey((#primitiveKey#) key);
+    }
+
+    @Override
     public Entry<#boxedKey#, V> floorEntry(final #boxedKey# key) {
-        if (key == null) return null;
+        if (key == null) throw new NullPointerException();
         final int node = floorNode((#primitiveKey#) key);
         return node != NULL_NODE ? new SimpleEntry<>(keys[node], values[node]) : null;
     }
 
     @Override
+    public #boxedKey# floorKey(#boxedKey# key) {
+        return floorKey((#primitiveKey#) key);
+    }
+
+    @Override
     public Entry<#boxedKey#, V> ceilingEntry(final #boxedKey# key) {
-        if (key == null) return null;
+        if (key == null) throw new NullPointerException();
         final int node = ceilingNode((#primitiveKey#) key);
         return node != NULL_NODE ? new SimpleEntry<>(keys[node], values[node]) : null;
     }
 
     @Override
+    public #boxedKey# ceilingKey(#boxedKey# key) {
+        return ceilingKey((#primitiveKey#) key);
+    }
+
+    @Override
     public Entry<#boxedKey#, V> higherEntry(final #boxedKey# key) {
-        if (key == null) return null;
+        if (key == null) throw new NullPointerException();
         final int node = higherNode((#primitiveKey#) key);
         return node != NULL_NODE ? new SimpleEntry<>(keys[node], values[node]) : null;
+    }
+
+    @Override
+    public #boxedKey# higherKey(#boxedKey# key) {
+        return higherKey((#primitiveKey#) key);
     }
 
     @Override
@@ -957,52 +1369,692 @@ public final class #upperKey#2ObjectTreeMap<V> implements NavigableMap<#boxedKey
 
     @Override
     public NavigableMap<#boxedKey#, V> descendingMap() {
-        throw new UnsupportedOperationException("descendingMap not implemented");
+        return new DescendingMap(this);
     }
 
     @Override
     public NavigableSet<#boxedKey#> navigableKeySet() {
-        throw new UnsupportedOperationException("navigableKeySet not implemented");
+        return new KeySet(this, false);
     }
 
     @Override
     public NavigableSet<#boxedKey#> descendingKeySet() {
-        throw new UnsupportedOperationException("descendingKeySet not implemented");
+        return new KeySet(this, true);
     }
 
     @Override
     public NavigableMap<#boxedKey#, V> subMap(#boxedKey# fromKey, boolean fromInclusive, #boxedKey# toKey, boolean toInclusive) {
-        throw new UnsupportedOperationException("subMap not implemented");
+        return new SubMap(this, fromKey, fromInclusive, toKey, toInclusive);
     }
 
     @Override
     public NavigableMap<#boxedKey#, V> headMap(#boxedKey# toKey, boolean inclusive) {
-        throw new UnsupportedOperationException("headMap not implemented");
+        return new SubMap(this, null, true, toKey, inclusive);
     }
 
     @Override
     public NavigableMap<#boxedKey#, V> tailMap(#boxedKey# fromKey, boolean inclusive) {
-        throw new UnsupportedOperationException("tailMap not implemented");
+        return new SubMap(this, fromKey, inclusive, null, true);
     }
 
     @Override
     public SortedMap<#boxedKey#, V> subMap(#boxedKey# fromKey, #boxedKey# toKey) {
-        throw new UnsupportedOperationException("subMap not implemented");
+        return new SubMap(this, fromKey, true, toKey, false);
     }
 
     @Override
     public SortedMap<#boxedKey#, V> headMap(#boxedKey# toKey) {
-        throw new UnsupportedOperationException("headMap not implemented");
+        return new SubMap(this, null, true, toKey, false);
     }
 
     @Override
     public SortedMap<#boxedKey#, V> tailMap(#boxedKey# fromKey) {
-        throw new UnsupportedOperationException("tailMap not implemented");
+        return new SubMap(this, fromKey, true, null, true);
+    }
+
+    @Override
+    public String toString() {
+        if (size == 0) {
+            return "{}";
+        }
+
+        final StringBuilder sb = new StringBuilder(size * 32); // Estimate ~32 chars per entry
+        sb.append('{');
+
+        boolean first = true;
+        int current = root != NULL_NODE ? minimum(root) : NULL_NODE;
+
+        while (current != NULL_NODE) {
+            if (!first) {
+                sb.append(", ");
+            }
+            first = false;
+
+            sb.append(keys[current]);
+            sb.append('=');
+            sb.append(values[current]);
+
+            current = successor(current);
+        }
+
+        sb.append('}');
+        return sb.toString();
+    }
+
+    /**
+     * Returns a detailed debug representation showing internal tree structure.
+     * Includes node indices, colors, and parent/child relationships.
+     */
+    public String toDebugString() {
+        if (size == 0) {
+            return "Empty tree (size=0, root=" + root + ")";
+        }
+
+        final StringBuilder sb = new StringBuilder(size * 128);
+        sb.append("Tree (size=").append(size)
+          .append(", root=").append(root)
+          .append(", capacity=").append(capacity)
+          .append(", freeListHead=").append(freeListHead)
+          .append("):\n");
+
+        appendNodeDebug(sb, root, 0);
+
+        return sb.toString();
+    }
+
+    private void appendNodeDebug(final StringBuilder sb, final int node, final int depth) {
+        if (node == NULL_NODE) {
+            return;
+        }
+
+        // Right subtree first (for visual layout)
+        appendNodeDebug(sb, rightChild[node], depth + 1);
+
+        // Current node
+        for (int i = 0; i < depth; i++) {
+            sb.append("    ");
+        }
+        sb.append("[").append(node).append("] ");
+        sb.append(keys[node]).append("=").append(values[node]);
+        sb.append(" (").append(color[node] ? "R" : "B").append(")");
+        sb.append(" p=").append(parent[node]);
+        sb.append(" L=").append(leftChild[node]);
+        sb.append(" R=").append(rightChild[node]);
+        sb.append('\n');
+
+        // Left subtree
+        appendNodeDebug(sb, leftChild[node], depth + 1);
+    }
+
+    // ------------------- SubMap Implementation -------------------
+
+    private final class SubMap extends AbstractMap<#boxedKey#, V> implements NavigableMap<#boxedKey#, V> {
+        private final #upperKey#2ObjectTreeMap<V> map;
+        private final #boxedKey# fromKey;
+        private final boolean fromInclusive;
+        private final #boxedKey# toKey;
+        private final boolean toInclusive;
+        private final boolean hasLowerBound;
+        private final boolean hasUpperBound;
+
+        SubMap(final #upperKey#2ObjectTreeMap<V> map,
+               final #boxedKey# fromKey, final boolean fromInclusive,
+               final #boxedKey# toKey, final boolean toInclusive) {
+            this.map = map;
+            this.fromKey = fromKey;
+            this.fromInclusive = fromInclusive;
+            this.toKey = toKey;
+            this.toInclusive = toInclusive;
+            this.hasLowerBound = fromKey != null;
+            this.hasUpperBound = toKey != null;
+
+            if (hasLowerBound && hasUpperBound && map.compareKeys((#primitiveKey#)fromKey, (#primitiveKey#)toKey) > 0) {
+                throw new IllegalArgumentException("fromKey > toKey");
+            }
+        }
+
+        private boolean inRange(final #primitiveKey# key) {
+            if (hasLowerBound) {
+                final int cmpLow = map.compareKeys(key, fromKey);
+                if (cmpLow < 0 || (!fromInclusive && cmpLow == 0)) return false;
+            }
+            if (hasUpperBound) {
+                final int cmpHigh = map.compareKeys(key, toKey);
+                return cmpHigh <= 0 && (toInclusive || cmpHigh != 0);
+            }
+            return true;
+        }
+
+        private boolean inLowerRange(final #primitiveKey# key, final boolean inclusive) {
+            if (!hasLowerBound) return true;
+            final int cmp = map.compareKeys(key, (#primitiveKey#) fromKey);
+            return cmp > 0 || (inclusive && cmp == 0);
+        }
+
+        private boolean inUpperRange(final #primitiveKey# key, final boolean inclusive) {
+            if (!hasUpperBound) return true;
+            final int cmp = map.compareKeys(key, (#primitiveKey#) toKey);
+            return cmp < 0 || (inclusive && cmp == 0);
+        }
+
+        private int lowestNode() {
+            int node;
+            if (hasLowerBound) {
+                node = fromInclusive ? map.ceilingNode((#primitiveKey#) fromKey) : map.higherNode((#primitiveKey#) fromKey);
+            } else {
+                node = map.root != NULL_NODE ? map.minimum(map.root) : NULL_NODE;
+            }
+            return (node != NULL_NODE && inRange(map.keys[node])) ? node : NULL_NODE;
+        }
+
+        private int highestNode() {
+            int node;
+            if (hasUpperBound) {
+                node = toInclusive ? map.floorNode((#primitiveKey#) toKey) : map.lowerNode((#primitiveKey#) toKey);
+            } else {
+                node = map.root != NULL_NODE ? map.maximum(map.root) : NULL_NODE;
+            }
+            return (node != NULL_NODE && inRange(map.keys[node])) ? node : NULL_NODE;
+        }
+
+        @Override
+        public int size() {
+            int count = 0;
+            for (Iterator<Entry<#boxedKey#, V>> it = entrySet().iterator(); it.hasNext(); it.next()) {
+                count++;
+            }
+            return count;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return lowestNode() == NULL_NODE;
+        }
+
+        @Override
+        public boolean containsKey(final Object key) {
+            if (!(key instanceof #boxedKey#)) return false;
+            return inRange((#primitiveKey#) key) && map.containsKey(key);
+        }
+
+        @Override
+        public V get(final Object key) {
+            if (!(key instanceof #boxedKey#)) return null;
+            if (!inRange((#primitiveKey#) key)) return null;
+            return map.get(key);
+        }
+
+        @Override
+        public V put(final #boxedKey# key, final V value) {
+            if (key == null || value == null) throw new NullPointerException();
+            if (!inRange((#primitiveKey#) key)) {
+                throw new IllegalArgumentException("Key out of range");
+            }
+            return map.put(key, value);
+        }
+
+        @Override
+        public V remove(final Object key) {
+            if (!(key instanceof #boxedKey#)) return null;
+            if (!inRange((#primitiveKey#) key)) return null;
+            return map.remove(key);
+        }
+
+        @Override
+        public void clear() {
+            for (Iterator<Entry<#boxedKey#, V>> it = entrySet().iterator(); it.hasNext(); ) {
+                it.next();
+                it.remove();
+            }
+        }
+
+        @Override
+        public Entry<#boxedKey#, V> firstEntry() {
+            final int node = lowestNode();
+            return node != NULL_NODE ? new SimpleEntry<>(map.keys[node], map.values[node]) : null;
+        }
+
+        @Override
+        public #boxedKey# firstKey() {
+            final int node = lowestNode();
+            if (node == NULL_NODE) throw new NoSuchElementException();
+            return map.keys[node];
+        }
+
+        @Override
+        public Entry<#boxedKey#, V> lastEntry() {
+            final int node = highestNode();
+            return node != NULL_NODE ? new SimpleEntry<>(map.keys[node], map.values[node]) : null;
+        }
+
+        @Override
+        public #boxedKey# lastKey() {
+            final int node = highestNode();
+            if (node == NULL_NODE) throw new NoSuchElementException();
+            return map.keys[node];
+        }
+
+        @Override
+        public Entry<#boxedKey#, V> pollFirstEntry() {
+            final int node = lowestNode();
+            if (node == NULL_NODE) return null;
+            final Entry<#boxedKey#, V> entry = new SimpleEntry<>(map.keys[node], map.values[node]);
+            map.deleteNode(node);
+            return entry;
+        }
+
+        @Override
+        public Entry<#boxedKey#, V> pollLastEntry() {
+            final int node = highestNode();
+            if (node == NULL_NODE) return null;
+            final Entry<#boxedKey#, V> entry = new SimpleEntry<>(map.keys[node], map.values[node]);
+            map.deleteNode(node);
+            return entry;
+        }
+
+        @Override
+        public Entry<#boxedKey#, V> lowerEntry(#boxedKey# key) {
+            final int node = lowerNode(key);
+            return node != NULL_NODE ? new SimpleEntry<>(map.keys[node], map.values[node]) : null;
+        }
+
+        @Override
+        public #boxedKey# lowerKey(#boxedKey# key) {
+            final int node = lowerNode(key);
+            return node != NULL_NODE ? map.keys[node] : null;
+        }
+
+        private int lowerNode(#boxedKey# key) {
+            if (key == null) throw new NullPointerException();
+            #primitiveKey# k = (#primitiveKey#) key;
+            int node;
+            if (hasUpperBound && !inUpperRange(k, false)) {
+                node = highestNode();
+            } else {
+                node = map.lowerNode(k);
+            }
+            return (node != NULL_NODE && inRange(map.keys[node])) ? node : NULL_NODE;
+        }
+
+        @Override
+        public Entry<#boxedKey#, V> floorEntry(#boxedKey# key) {
+            final int node = floorNode(key);
+            return node != NULL_NODE ? new SimpleEntry<>(map.keys[node], map.values[node]) : null;
+        }
+
+        @Override
+        public #boxedKey# floorKey(#boxedKey# key) {
+            final int node = floorNode(key);
+            return node != NULL_NODE ? map.keys[node] : null;
+        }
+
+        private int floorNode(#boxedKey# key) {
+            if (key == null) throw new NullPointerException();
+            #primitiveKey# k = (#primitiveKey#) key;
+            int node;
+            if (hasUpperBound && !inUpperRange(k, true)) {
+                node = highestNode();
+            } else {
+                node = map.floorNode(k);
+            }
+            return (node != NULL_NODE && inRange(map.keys[node])) ? node : NULL_NODE;
+        }
+
+        @Override
+        public Entry<#boxedKey#, V> ceilingEntry(#boxedKey# key) {
+            final int node = ceilingNode(key);
+            return node != NULL_NODE ? new SimpleEntry<>(map.keys[node], map.values[node]) : null;
+        }
+
+        @Override
+        public #boxedKey# ceilingKey(#boxedKey# key) {
+            final int node = ceilingNode(key);
+            return node != NULL_NODE ? map.keys[node] : null;
+        }
+
+        private int ceilingNode(#boxedKey# key) {
+            if (key == null) throw new NullPointerException();
+            #primitiveKey# k = (#primitiveKey#) key;
+            int node;
+            if (hasLowerBound && !inLowerRange(k, true)) {
+                node = lowestNode();
+            } else {
+                node = map.ceilingNode(k);
+            }
+            return (node != NULL_NODE && inRange(map.keys[node])) ? node : NULL_NODE;
+        }
+
+        @Override
+        public Entry<#boxedKey#, V> higherEntry(#boxedKey# key) {
+            final int node = higherNode(key);
+            return node != NULL_NODE ? new SimpleEntry<>(map.keys[node], map.values[node]) : null;
+        }
+
+        @Override
+        public #boxedKey# higherKey(#boxedKey# key) {
+            final int node = higherNode(key);
+            return node != NULL_NODE ? map.keys[node] : null;
+        }
+
+        private int higherNode(#boxedKey# key) {
+            if (key == null) throw new NullPointerException();
+            #primitiveKey# k = (#primitiveKey#) key;
+            int node;
+            if (hasLowerBound && !inLowerRange(k, false)) {
+                node = lowestNode();
+            } else {
+                node = map.higherNode(k);
+            }
+            return (node != NULL_NODE && inRange(map.keys[node])) ? node : NULL_NODE;
+        }
+
+        @Override
+        public Comparator<? super #boxedKey#> comparator() { return null; }
+
+        @Override
+        public NavigableMap<#boxedKey#, V> descendingMap() {
+            return new SubMap(map, fromKey, fromInclusive, toKey, toInclusive).new DescendingSubMap();
+        }
+
+        @Override
+        public NavigableSet<#boxedKey#> navigableKeySet() {
+            return new KeySet(this, false);
+        }
+
+        @Override
+        public NavigableSet<#boxedKey#> descendingKeySet() {
+            return new KeySet(this, true);
+        }
+
+        @Override
+        public NavigableMap<#boxedKey#, V> subMap(#boxedKey# fromKey, boolean fromInclusive, #boxedKey# toKey, boolean toInclusive) {
+            if (fromKey == null || toKey == null) throw new NullPointerException();
+            #primitiveKey# from = (#primitiveKey#)fromKey;
+            #primitiveKey# to = (#primitiveKey#)toKey;
+            if (!inRange(from) || !inRange(to)) throw new IllegalArgumentException("Key out of range");
+            return new SubMap(map, fromKey, fromInclusive, toKey, toInclusive);
+        }
+
+        @Override
+        public NavigableMap<#boxedKey#, V> headMap(#boxedKey# toKey, boolean inclusive) {
+            if (toKey == null) throw new NullPointerException();
+            if (!inRange((#primitiveKey#)toKey)) throw new IllegalArgumentException("Key out of range");
+            return new SubMap(map, fromKey, fromInclusive, toKey, inclusive);
+        }
+
+        @Override
+        public NavigableMap<#boxedKey#, V> tailMap(#boxedKey# fromKey, boolean inclusive) {
+            if (fromKey == null) throw new NullPointerException();
+            if (!inRange((#primitiveKey#)fromKey)) throw new IllegalArgumentException("Key out of range");
+            return new SubMap(map, fromKey, inclusive, toKey, toInclusive);
+        }
+
+        @Override public SortedMap<#boxedKey#, V> subMap(#boxedKey# fromKey, #boxedKey# toKey) { return subMap(fromKey, true, toKey, false); }
+        @Override public SortedMap<#boxedKey#, V> headMap(#boxedKey# toKey) { return headMap(toKey, false); }
+        @Override public SortedMap<#boxedKey#, V> tailMap(#boxedKey# fromKey) { return tailMap(fromKey, true); }
+
+        @Override
+        public Set<Entry<#boxedKey#, V>> entrySet() {
+            return new SubMapEntrySet();
+        }
+
+        private final class SubMapEntrySet extends AbstractSet<Entry<#boxedKey#, V>> {
+            @Override
+            public int size() {
+                return SubMap.this.size();
+            }
+            @Override
+            public Iterator<Entry<#boxedKey#, V>> iterator() {
+                return new SubMapEntryIterator(lowestNode());
+            }
+        }
+
+        private final class SubMapEntryIterator extends BaseIterator<Entry<#boxedKey#, V>> {
+            SubMapEntryIterator(int startNode) {
+                super(startNode);
+            }
+
+            @Override
+            public boolean hasNext() {
+                return next != NULL_NODE && inRange(map.keys[next]);
+            }
+
+            @Override
+            public Entry<#boxedKey#, V> next() {
+                if (next == NULL_NODE || !inRange(map.keys[next])) {
+                    throw new NoSuchElementException();
+                }
+                final int node = nextAscending();
+                return new SimpleEntry<>(map.keys[node], map.values[node]);
+            }
+        }
+
+        private final class DescendingSubMap extends AbstractMap<#boxedKey#, V> implements NavigableMap<#boxedKey#, V> {
+            @Override public int size() { return SubMap.this.size(); }
+            @Override public boolean isEmpty() { return SubMap.this.isEmpty(); }
+            @Override public boolean containsKey(Object key) { return SubMap.this.containsKey(key); }
+            @Override public V get(Object key) { return SubMap.this.get(key); }
+            @Override public V put(#boxedKey# key, V value) { return SubMap.this.put(key, value); }
+            @Override public V remove(Object key) { return SubMap.this.remove(key); }
+            @Override public void clear() { SubMap.this.clear(); }
+            @Override public Comparator<? super #boxedKey#> comparator() { return null; }
+
+            @Override public Entry<#boxedKey#, V> firstEntry() { return SubMap.this.lastEntry(); }
+            @Override public #boxedKey# firstKey() { return SubMap.this.lastKey(); }
+            @Override public Entry<#boxedKey#, V> lastEntry() { return SubMap.this.firstEntry(); }
+            @Override public #boxedKey# lastKey() { return SubMap.this.firstKey(); }
+
+            @Override public Entry<#boxedKey#, V> pollFirstEntry() { return SubMap.this.pollLastEntry(); }
+            @Override public Entry<#boxedKey#, V> pollLastEntry() { return SubMap.this.pollFirstEntry(); }
+
+            @Override public Entry<#boxedKey#, V> lowerEntry(#boxedKey# key) { return SubMap.this.higherEntry(key); }
+            @Override public #boxedKey# lowerKey(#boxedKey# key) { return SubMap.this.higherKey(key); }
+            @Override public Entry<#boxedKey#, V> floorEntry(#boxedKey# key) { return SubMap.this.ceilingEntry(key); }
+            @Override public #boxedKey# floorKey(#boxedKey# key) { return SubMap.this.ceilingKey(key); }
+            @Override public Entry<#boxedKey#, V> ceilingEntry(#boxedKey# key) { return SubMap.this.floorEntry(key); }
+            @Override public #boxedKey# ceilingKey(#boxedKey# key) { return SubMap.this.floorKey(key); }
+            @Override public Entry<#boxedKey#, V> higherEntry(#boxedKey# key) { return SubMap.this.lowerEntry(key); }
+            @Override public #boxedKey# higherKey(#boxedKey# key) { return SubMap.this.lowerKey(key); }
+
+            @Override public NavigableMap<#boxedKey#, V> descendingMap() { return SubMap.this; }
+            @Override public NavigableSet<#boxedKey#> navigableKeySet() { return new KeySet(this, false); }
+            @Override public NavigableSet<#boxedKey#> descendingKeySet() { return SubMap.this.navigableKeySet(); }
+
+            @Override public NavigableMap<#boxedKey#, V> subMap(#boxedKey# fromKey, boolean fromInclusive, #boxedKey# toKey, boolean toInclusive) { return SubMap.this.subMap(toKey, toInclusive, fromKey, fromInclusive).descendingMap(); }
+            @Override public NavigableMap<#boxedKey#, V> headMap(#boxedKey# toKey, boolean inclusive) { return SubMap.this.tailMap(toKey, inclusive).descendingMap(); }
+            @Override public NavigableMap<#boxedKey#, V> tailMap(#boxedKey# fromKey, boolean inclusive) { return SubMap.this.headMap(fromKey, inclusive).descendingMap(); }
+            @Override public SortedMap<#boxedKey#, V> subMap(#boxedKey# fromKey, #boxedKey# toKey) { return subMap(fromKey, true, toKey, false); }
+            @Override public SortedMap<#boxedKey#, V> headMap(#boxedKey# toKey) { return headMap(toKey, false); }
+            @Override public SortedMap<#boxedKey#, V> tailMap(#boxedKey# fromKey) { return tailMap(fromKey, true); }
+
+            @Override public Set<Entry<#boxedKey#, V>> entrySet() { return new DescendingSubMapEntrySet(); }
+        }
+
+        private final class DescendingSubMapEntrySet extends AbstractSet<Entry<#boxedKey#, V>> {
+            @Override
+            public int size() {
+                return SubMap.this.size();
+            }
+            @Override
+            public Iterator<Entry<#boxedKey#, V>> iterator() {
+                return new DescendingSubMapEntryIterator(highestNode());
+            }
+        }
+
+        private final class DescendingSubMapEntryIterator extends BaseIterator<Entry<#boxedKey#, V>> {
+            DescendingSubMapEntryIterator(int startNode) {
+                super(startNode);
+            }
+
+            @Override
+            public boolean hasNext() {
+                return next != NULL_NODE && inRange(map.keys[next]);
+            }
+
+            @Override
+            public Entry<#boxedKey#, V> next() {
+                if (next == NULL_NODE || !inRange(map.keys[next])) {
+                    throw new NoSuchElementException();
+                }
+                final int node = nextDescending();
+                return new SimpleEntry<>(map.keys[node], map.values[node]);
+            }
+        }
+    }
+
+    // ------------------- DescendingMap Implementation -------------------
+
+    private final class DescendingMap extends AbstractMap<#boxedKey#, V> implements NavigableMap<#boxedKey#, V> {
+        private final #upperKey#2ObjectTreeMap<V> map;
+
+        DescendingMap(final #upperKey#2ObjectTreeMap<V> map) { this.map = map; }
+
+        @Override public int size() { return map.size(); }
+        @Override public boolean isEmpty() { return map.isEmpty(); }
+        @Override public boolean containsKey(Object key) { return map.containsKey(key); }
+        @Override public V get(Object key) { return map.get(key); }
+        @Override public V put(#boxedKey# key, V value) { return map.put(key, value); }
+        @Override public V remove(Object key) { return map.remove(key); }
+        @Override public void clear() { map.clear(); }
+        @Override public Comparator<? super #boxedKey#> comparator() { return null; }
+
+        @Override public Entry<#boxedKey#, V> firstEntry() { return map.lastEntry(); }
+        @Override public #boxedKey# firstKey() { return map.lastKey(); }
+        @Override public Entry<#boxedKey#, V> lastEntry() { return map.firstEntry(); }
+        @Override public #boxedKey# lastKey() { return map.firstKey(); }
+
+        @Override public Entry<#boxedKey#, V> pollFirstEntry() { return map.pollLastEntry(); }
+        @Override public Entry<#boxedKey#, V> pollLastEntry() { return map.pollFirstEntry(); }
+
+        @Override public Entry<#boxedKey#, V> lowerEntry(#boxedKey# key) { return map.higherEntry(key); }
+        @Override public #boxedKey# lowerKey(#boxedKey# key) { return map.higherKey(key); }
+        @Override public Entry<#boxedKey#, V> floorEntry(#boxedKey# key) { return map.ceilingEntry(key); }
+        @Override public #boxedKey# floorKey(#boxedKey# key) { return map.ceilingKey(key); }
+        @Override public Entry<#boxedKey#, V> ceilingEntry(#boxedKey# key) { return map.floorEntry(key); }
+        @Override public #boxedKey# ceilingKey(#boxedKey# key) { return map.floorKey(key); }
+        @Override public Entry<#boxedKey#, V> higherEntry(#boxedKey# key) { return map.lowerEntry(key); }
+        @Override public #boxedKey# higherKey(#boxedKey# key) { return map.lowerKey(key); }
+
+        @Override public NavigableMap<#boxedKey#, V> descendingMap() { return map; }
+        @Override public NavigableSet<#boxedKey#> navigableKeySet() { return new KeySet(this, false); }
+        @Override public NavigableSet<#boxedKey#> descendingKeySet() { return map.navigableKeySet(); }
+
+        @Override public NavigableMap<#boxedKey#, V> subMap(#boxedKey# fromKey, boolean fromInclusive, #boxedKey# toKey, boolean toInclusive) { return map.subMap(toKey, toInclusive, fromKey, fromInclusive).descendingMap(); }
+        @Override public NavigableMap<#boxedKey#, V> headMap(#boxedKey# toKey, boolean inclusive) { return map.tailMap(toKey, inclusive).descendingMap(); }
+        @Override public NavigableMap<#boxedKey#, V> tailMap(#boxedKey# fromKey, boolean inclusive) { return map.headMap(fromKey, inclusive).descendingMap(); }
+        @Override public SortedMap<#boxedKey#, V> subMap(#boxedKey# fromKey, #boxedKey# toKey) { return subMap(fromKey, true, toKey, false); }
+        @Override public SortedMap<#boxedKey#, V> headMap(#boxedKey# toKey) { return headMap(toKey, false); }
+        @Override public SortedMap<#boxedKey#, V> tailMap(#boxedKey# fromKey) { return tailMap(fromKey, true); }
+
+        @Override
+        public Set<Entry<#boxedKey#, V>> entrySet() {
+            return new AbstractSet<Entry<#boxedKey#, V>>() {
+                @Override public int size() { return map.size(); }
+                @Override public void clear() { map.clear(); }
+                @Override public Iterator<Entry<#boxedKey#, V>> iterator() {
+                    return new DescendingEntryIterator(map.root == NULL_NODE ? NULL_NODE : map.maximum(map.root));
+                }
+            };
+        }
+    }
+
+    // ------------------- KeySet Implementation -------------------
+
+    private final class KeySet extends AbstractSet<#boxedKey#> implements NavigableSet<#boxedKey#> {
+        private final NavigableMap<#boxedKey#, V> map;
+        private final boolean descending;
+
+        KeySet(NavigableMap<#boxedKey#, V> map, boolean descending) {
+            this.map = map;
+            this.descending = descending;
+        }
+
+        @Override
+        public int size() { return map.size(); }
+        @Override
+        public boolean isEmpty() { return map.isEmpty(); }
+        @Override
+        public boolean contains(Object o) { return map.containsKey((#boxedKey#) o); }
+        @Override
+        public void clear() { map.clear(); }
+
+        @Override
+        public #boxedKey# lower(#boxedKey# k) { return descending ? map.higherKey(k) : map.lowerKey(k); }
+        @Override
+        public #boxedKey# floor(#boxedKey# k) { return descending ? map.ceilingKey(k) : map.floorKey(k); }
+        @Override
+        public #boxedKey# ceiling(#boxedKey# k) { return descending ? map.floorKey(k) : map.ceilingKey(k); }
+        @Override
+        public #boxedKey# higher(#boxedKey# k) { return descending ? map.lowerKey(k) : map.higherKey(k); }
+
+        @Override
+        public #boxedKey# first() { return descending ? map.lastKey() : map.firstKey(); }
+        @Override
+        public #boxedKey# last() { return descending ? map.firstKey() : map.lastKey(); }
+
+        @Override
+        public #boxedKey# pollFirst() {
+            Entry<#boxedKey#, V> e = descending ? map.pollLastEntry() : map.pollFirstEntry();
+            return e != null ? e.getKey() : null;
+        }
+
+        @Override
+        public #boxedKey# pollLast() {
+            Entry<#boxedKey#, V> e = descending ? map.pollFirstEntry() : map.pollLastEntry();
+            return e != null ? e.getKey() : null;
+        }
+
+        @Override
+        public Comparator<? super #boxedKey#> comparator() { return map.comparator(); }
+
+        @Override
+        public Iterator<#boxedKey#> iterator() {
+            if (map instanceof #upperKey#2ObjectTreeMap<V> m) {
+                int startNode = m.root == NULL_NODE ? NULL_NODE : (descending ? m.maximum(m.root) : m.minimum(m.root));
+                return descending ? m.new DescendingKeyIterator(startNode) : m.new KeyIterator(startNode);
+            }
+            if (map instanceof SubMap m) {
+                int startNode = descending ? m.highestNode() : m.lowestNode();
+                return new Iterator<#boxedKey#>() {
+                    final Iterator<Entry<#boxedKey#, V>> entryIt = m.entrySet().iterator();
+                    @Override public boolean hasNext() { return entryIt.hasNext(); }
+                    @Override public #boxedKey# next() { return entryIt.next().getKey(); }
+                    @Override public void remove() { entryIt.remove(); }
+                };
+            }
+            return (descending ? map.descendingMap() : map).keySet().iterator();
+        }
+
+        @Override
+        public Iterator<#boxedKey#> descendingIterator() {
+            return new KeySet(map, !descending).iterator();
+        }
+
+        @Override
+        public NavigableSet<#boxedKey#> descendingSet() {
+            return new KeySet(map, !descending);
+        }
+
+        @Override
+        public NavigableSet<#boxedKey#> subSet(#boxedKey# from, boolean fromInc, #boxedKey# to, boolean toInc) {
+            return new KeySet(map.subMap(from, fromInc, to, toInc), descending);
+        }
+        @Override
+        public NavigableSet<#boxedKey#> headSet(#boxedKey# to, boolean toInc) {
+            return new KeySet(map.headMap(to, toInc), descending);
+        }
+        @Override
+        public NavigableSet<#boxedKey#> tailSet(#boxedKey# from, boolean fromInc) {
+            return new KeySet(map.tailMap(from, fromInc), descending);
+        }
+        @Override public SortedSet<#boxedKey#> subSet(#boxedKey# from, #boxedKey# to) { return subSet(from, true, to, false); }
+        @Override public SortedSet<#boxedKey#> headSet(#boxedKey# to) { return headSet(to, false); }
+        @Override public SortedSet<#boxedKey#> tailSet(#boxedKey# from) { return tailSet(from, true); }
     }
 
     // ------------------- Builder -------------------
 
-    public static class Builder<V> {
+    public static final class Builder<V> {
         private int initialCapacity = DEFAULT_INITIAL_CAPACITY;
         private boolean enableIteratorPool = true;
 

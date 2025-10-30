@@ -40,7 +40,6 @@ public final class #upperKey#2#upperValue#TreeMap implements NavigableMap<#boxed
 
     // Free list for recycling nodes
     private int freeListHead = NULL_NODE;
-    private int nextNodeIndex = 0;
 
     public final #primitiveValue# nullValue;
 
@@ -85,7 +84,6 @@ public final class #upperKey#2#upperValue#TreeMap implements NavigableMap<#boxed
         }
         rightChild[capacity - 1] = NULL_NODE;
         freeListHead = 0;
-        nextNodeIndex = 0;
     }
 
     // ------------------- Node Management -------------------
@@ -97,9 +95,6 @@ public final class #upperKey#2#upperValue#TreeMap implements NavigableMap<#boxed
             // Reuse from free list
             nodeIndex = freeListHead;
             freeListHead = rightChild[freeListHead];
-        } else if (nextNodeIndex < capacity) {
-            // Allocate new node from pre-allocated arrays
-            nodeIndex = nextNodeIndex++;
         } else {
             // Need to grow capacity
             grow();
@@ -125,6 +120,7 @@ public final class #upperKey#2#upperValue#TreeMap implements NavigableMap<#boxed
     }
 
     private void grow() {
+        final int oldCapacity = capacity;
         final int newCapacity = capacity * 2;
 
         keys = Arrays.copyOf(keys, newCapacity);
@@ -135,11 +131,11 @@ public final class #upperKey#2#upperValue#TreeMap implements NavigableMap<#boxed
         color = Arrays.copyOf(color, newCapacity);
 
         // Extend free list with new nodes
-        for (int i = capacity; i < newCapacity - 1; i++) {
+        for (int i = oldCapacity; i < newCapacity - 1; i++) {
             rightChild[i] = i + 1;
         }
         rightChild[newCapacity - 1] = freeListHead;
-        freeListHead = capacity;
+        freeListHead = oldCapacity;
 
         capacity = newCapacity;
     }
@@ -2007,8 +2003,8 @@ public final class #upperKey#2#upperValue#TreeMap implements NavigableMap<#boxed
             return this;
         }
 
-        public Builder enableIteratorPool(final boolean enableIteratorPool) {
-            this.enableIteratorPool = enableIteratorPool;
+        public Builder disableIteratorPool() {
+            this.enableIteratorPool = false;
             return this;
         }
 
