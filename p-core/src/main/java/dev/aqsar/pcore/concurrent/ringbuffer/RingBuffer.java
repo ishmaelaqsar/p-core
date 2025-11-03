@@ -42,7 +42,7 @@ public interface RingBuffer {
          * @param typeId message type identifier
          * @param buffer a read-only buffer view of the message payload
          */
-        void accept(int typeId, ReadableBuffer buffer);
+        void accept(final int typeId, final ReadableBuffer buffer);
     }
 
     /**
@@ -55,7 +55,7 @@ public interface RingBuffer {
          * @param buffer a read-only buffer view of the message payload
          * @return a {@link ConsumerAction} to control the poll loop
          */
-        ConsumerAction accept(int typeId, ReadableBuffer buffer);
+        ConsumerAction accept(final int typeId, final ReadableBuffer buffer);
     }
 
     /**
@@ -93,7 +93,7 @@ public interface RingBuffer {
      * @param len       number of bytes to copy.
      * @return {@code true} if successfully written; {@code false} if insufficient space.
      */
-    boolean offer(int typeId, ByteBuffer src, int srcOffset, int len);
+    boolean offer(final int typeId, final ByteBuffer src, final int srcOffset, final int len);
 
     /**
      * Claims space for a zero-copy write.
@@ -107,7 +107,7 @@ public interface RingBuffer {
      * @param len    payload length.
      * @return payload offset to write into, or a negative value if insufficient space.
      */
-    int claim(int typeId, int len);
+    int claim(final int typeId, final int len);
 
     /**
      * Publishes a previously claimed record, making it visible to the consumer.
@@ -116,7 +116,7 @@ public interface RingBuffer {
      * @throws IllegalArgumentException if the offset is invalid
      * @throws IllegalStateException    if the slot is not in a 'claimed' state
      */
-    void publish(int payloadOffset);
+    void publish(final int payloadOffset);
 
     /**
      * Abandons a claimed record (converts it into padding).
@@ -125,7 +125,7 @@ public interface RingBuffer {
      * @throws IllegalArgumentException if the offset is invalid
      * @throws IllegalStateException    if the slot is not in a 'claimed' state
      */
-    void abandon(int payloadOffset);
+    void abandon(final int payloadOffset);
 
     // -------------------------------------------------------------------------
     // Read API
@@ -138,12 +138,12 @@ public interface RingBuffer {
      * @param limit    maximum number of messages to consume.
      * @return number of messages consumed.
      */
-    int poll(MessageConsumer consumer, int limit);
+    int poll(final MessageConsumer consumer, final int limit);
 
     /**
      * Convenience overload: polls all available messages.
      */
-    default int poll(MessageConsumer consumer) {
+    default int poll(final MessageConsumer consumer) {
         return poll(consumer, Integer.MAX_VALUE);
     }
 
@@ -154,7 +154,7 @@ public interface RingBuffer {
      * @param limit    maximum number of messages to consume.
      * @return number of messages consumed.
      */
-    int controlledPoll(ControlledConsumer consumer, int limit);
+    int controlledPoll(final ControlledConsumer consumer, final int limit);
 
     /**
      * Convenience overload: polls all available messages.

@@ -76,7 +76,7 @@ public final class MPMCRingBuffer implements RingBuffer {
      * @param directBuffer a direct buffer, e.g., from {@link RingBufferAllocator}.
      * @throws IllegalArgumentException if the buffer is null, non-direct, or size invalid.
      */
-    public MPMCRingBuffer(ByteBuffer directBuffer) {
+    public MPMCRingBuffer(final ByteBuffer directBuffer) {
         if (directBuffer == null || !directBuffer.isDirect()) {
             throw new IllegalArgumentException("Buffer must be direct");
         }
@@ -104,7 +104,7 @@ public final class MPMCRingBuffer implements RingBuffer {
      * {@inheritDoc}
      */
     @Override
-    public boolean offer(int typeId, ByteBuffer src, int srcOffset, int len) {
+    public boolean offer(final int typeId, final ByteBuffer src, final int srcOffset, final int len) {
         if (typeId < 1) {
             throw new IllegalArgumentException("typeId must be positive");
         }
@@ -161,7 +161,7 @@ public final class MPMCRingBuffer implements RingBuffer {
      * {@inheritDoc}
      */
     @Override
-    public int claim(int typeId, int len) {
+    public int claim(final int typeId, final int len) {
         if (typeId < 1) {
             throw new IllegalArgumentException("typeId must be positive");
         }
@@ -211,6 +211,7 @@ public final class MPMCRingBuffer implements RingBuffer {
 
                 long headerAddr = dataBaseAddress + writeOffset;
                 UNSAFE.putLong(headerAddr, packHeader(-recordSize, typeId));
+                UNSAFE.storeFence();
 
                 // Return offset relative to the buffer's start
                 return METADATA_SIZE + writeOffset + RECORD_HEADER_SIZE;
@@ -222,7 +223,7 @@ public final class MPMCRingBuffer implements RingBuffer {
      * {@inheritDoc}
      */
     @Override
-    public void publish(int payloadOffset) {
+    public void publish(final int payloadOffset) {
         // Convert from absolute offset back to data-region offset
         final int offset = (payloadOffset - METADATA_SIZE) - RECORD_HEADER_SIZE;
         if (offset < 0 || offset >= dataSize) {
@@ -246,7 +247,7 @@ public final class MPMCRingBuffer implements RingBuffer {
      * {@inheritDoc}
      */
     @Override
-    public void abandon(int payloadOffset) {
+    public void abandon(final int payloadOffset) {
         // Convert from absolute offset back to data-region offset
         final int offset = (payloadOffset - METADATA_SIZE) - RECORD_HEADER_SIZE;
         if (offset < 0 || offset >= dataSize) {
@@ -269,7 +270,7 @@ public final class MPMCRingBuffer implements RingBuffer {
      * {@inheritDoc}
      */
     @Override
-    public int poll(MessageConsumer consumer, int limit) {
+    public int poll(final MessageConsumer consumer, final int limit) {
         final UnsafeBuffer buffer = consumerBuffer.get();
         int count = 0;
 
@@ -291,9 +292,6 @@ public final class MPMCRingBuffer implements RingBuffer {
             }
 
             final int alignedRecordSize = alignUp(recordSize);
-            if (head + alignedRecordSize > tail) {
-                return count; // Incomplete read
-            }
 
             // Atomically claim this message
             final long newHead = head + alignedRecordSize;
@@ -315,7 +313,7 @@ public final class MPMCRingBuffer implements RingBuffer {
      * {@inheritDoc}
      */
     @Override
-    public int controlledPoll(ControlledConsumer consumer, int limit) {
+    public int controlledPoll(final ControlledConsumer consumer, final int limit) {
         final UnsafeBuffer buffer = consumerBuffer.get();
         int count = 0;
 
@@ -337,9 +335,6 @@ public final class MPMCRingBuffer implements RingBuffer {
             }
 
             final int alignedRecordSize = alignUp(recordSize);
-            if (head + alignedRecordSize > tail) {
-                return count; // Incomplete read
-            }
 
             // Atomically claim this message
             final long newHead = head + alignedRecordSize;
@@ -446,12 +441,17 @@ public final class MPMCRingBuffer implements RingBuffer {
         return UNSAFE.getAndAddLong(null, correlationAddr, 1L);
     }
 
-    private void putPaddingRecord(int offset, int paddingSize) {
-        long headerAddr = dataBaseAddress + offset;
-        UNSAFE.putLong(headerAddr, packHeader(paddingSize, PADDING_TYPE));
+    private void putPaddingRecord(final int offset, final int paddingSize) {
+        final long headerAddr = dataBaseAddress + offset;
+        UNSAFE.putLongVolatile(null, headerAddr, packHeader(paddingSize, PADDING_TYPE));
     }
 
-    private void putRecord(int offset, ByteBuffer src, int srcOffset, int length, int typeId, int recordSize) {
+    private void putRecord(final int offset,
+                           final ByteBuffer src,
+                           final int srcOffset,
+                           final int length,
+                           final int typeId,
+                           final int recordSize) {
         final long headerAddr = dataBaseAddress + offset;
         final long payloadAddr = headerAddr + RECORD_HEADER_SIZE;
         final long inProgress = packHeader(-recordSize, typeId);
