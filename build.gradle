@@ -22,7 +22,13 @@ subprojects {
         mavenCentral()
     }
 
-    test {
-        useJUnitPlatform()
+    tasks.withType(Test).tap {
+        configureEach {
+            useJUnitPlatform()
+
+            jvmArgs "-ea",
+                "--add-opens=java.base/java.nio=ALL-UNNAMED",
+                "--add-opens=java.base/sun.misc=ALL-UNNAMED"
+        }
     }
 }
