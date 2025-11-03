@@ -1,6 +1,5 @@
 package dev.aqsar.pcore.concurrent.queue;
 
-import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -8,110 +7,137 @@ import static dev.aqsar.pcore.concurrent.queue.UnsafeQueueUtil.*;
 
 /**
  * A Multi-Producer, Multi-Consumer (MPMC) lock-free, bounded,
- * array-backed queue.
- * <p>
- * This implementation uses cache-line padding and Unsafe CAS operations
- * to achieve lock-free performance. It implements a two-sided check
- * on the buffer slots to prevent race conditions between producers
- * and consumers wrapping around the array.
+ * array-backed queue using sequence numbers for coordination.
  */
-@SuppressWarnings({"restriction", "unchecked"})
-public final class MPMCArrayQueue<T> extends PaddedProducerIndex implements ConcurrentArrayQueue<T> {
+@SuppressWarnings({"restriction", "unchecked", "unused"})
+public final class MPMCArrayQueue<T> implements ConcurrentArrayQueue<T> {
 
-    // --- Consumer Fields (on a separate cache line) ---
-    private final PaddedConsumerIndex consumerIndex = new PaddedConsumerIndex(0L);
+    // Producer fields (separate cache line)
+    private long p1, p2, p3, p4, p5, p6, p7;
+    private volatile long producerIndex;
+    private long p8, p9, p10, p11, p12, p13, p14;
 
-    // --- Shared Fields ---
+    // Consumer fields (separate cache line)
+    private long p15, p16, p17, p18, p19, p20, p21;
+    private volatile long consumerIndex;
+    private long p22, p23, p24, p25, p26, p27, p28;
+
     private final int capacity;
     private final long mask;
-    private final Object[] buffer;
+    private final Cell[] buffer;
 
-    public MPMCArrayQueue(int requestedCapacity) {
-        super(0L); // PaddedProducerIndex
-        this.capacity = ceilingNextPowerOfTwo(requestedCapacity);
-        this.mask = capacity - 1;
-        this.buffer = new Object[capacity];
+    private final long P_INDEX_OFFSET;
+    private final long C_INDEX_OFFSET;
+
+    /**
+     * Cell holds both the element and a sequence number for coordination.
+     */
+    private static final class Cell {
+        // Padding to prevent false sharing between cells
+        private long p1, p2, p3, p4, p5, p6, p7;
+        private volatile long sequence;
+        private volatile Object element;
+        private long p8, p9, p10, p11, p12, p13, p14;
     }
 
+    public MPMCArrayQueue(final int requestedCapacity) {
+        this.capacity = ceilingNextPowerOfTwo(requestedCapacity);
+        this.mask = capacity - 1;
+        this.buffer = new Cell[capacity];
+
+        // Initialize cells with sequence numbers
+        for (int i = 0; i < capacity; i++) {
+            buffer[i] = new Cell();
+            buffer[i].sequence = i;
+        }
+
+        try {
+            P_INDEX_OFFSET = UNSAFE.objectFieldOffset(MPMCArrayQueue.class.getDeclaredField("producerIndex"));
+            C_INDEX_OFFSET = UNSAFE.objectFieldOffset(MPMCArrayQueue.class.getDeclaredField("consumerIndex"));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
     @Override
-    public boolean offer(T element) {
+    public boolean offer(final T element) {
         if (element == null) {
             throw new NullPointerException("Element cannot be null");
         }
 
         long pIndex;
-        long offset;
+        Cell cell;
 
         while (true) {
-            pIndex = get(); // Volatile read
-            final long cIndex = consumerIndex.get(); // Volatile read
+            pIndex = UNSAFE.getLongVolatile(this, P_INDEX_OFFSET);
+            cell = buffer[(int) (pIndex & mask)];
 
-            if (pIndex - cIndex == capacity) {
-                return false; // Full
+            final long seq = getSequenceVolatile(cell);
+            final long diff = seq - pIndex;
+
+            if (diff == 0) {
+                // Slot is available for writing
+                if (UNSAFE.compareAndSwapLong(this, P_INDEX_OFFSET, pIndex, pIndex + 1)) {
+                    break; // Successfully claimed
+                }
+            } else if (diff < 0) {
+                // Queue is full
+                return false;
             }
-
-            // Calculate offset *before* CAS
-            offset = calcOffset(pIndex, mask);
-
-            // Spin-wait until the consumer has 'nulled' this slot
-            // This prevents the "flyby" race condition.
-            if (UNSAFE.getObjectVolatile(buffer, offset) != null) {
-                // We are full, but the cIndex hasn't caught up yet.
-                // A 'return false' here is also valid, but spinning
-                // is more common for MPMC.
-                Thread.onSpinWait();
-                continue;
-            }
-
-            // CAS to claim the producer slot
-            if (compareAndSet(pIndex, pIndex + 1)) {
-                break; // Slot claimed
-            }
-            // CAS failed, another producer beat us, retry
+            // else diff > 0: slot not ready yet (another producer is working on it), retry
         }
 
-        // This is the "publish" write.
-        UNSAFE.putObjectVolatile(buffer, offset, element);
+        // We own this slot, write the element
+        putElementVolatile(cell, element);
+
+        // Publish by updating sequence
+        putSequenceVolatile(cell, pIndex + 1);
         return true;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public T poll() {
         long cIndex;
-        long offset;
+        Cell cell;
         T element;
 
         while (true) {
-            cIndex = consumerIndex.get(); // Volatile read
-            final long pIndex = get(); // Volatile read
+            cIndex = UNSAFE.getLongVolatile(this, C_INDEX_OFFSET);
+            cell = buffer[(int) (cIndex & mask)];
 
-            if (cIndex == pIndex) {
-                return null; // Empty
+            final long seq = getSequenceVolatile(cell);
+            final long diff = seq - (cIndex + 1);
+
+            if (diff == 0) {
+                // Slot is available for reading
+                if (UNSAFE.compareAndSwapLong(this, C_INDEX_OFFSET, cIndex, cIndex + 1)) {
+                    break; // Successfully claimed
+                }
+            } else if (diff < 0) {
+                // Queue is empty
+                return null;
             }
-
-            // Calculate offset *before* CAS
-            offset = calcOffset(cIndex, mask);
-
-            // Spin-wait until the producer has published the element.
-            // This prevents the "lost update" deadlock.
-            element = (T) UNSAFE.getObjectVolatile(buffer, offset);
-            if (element == null) {
-                Thread.onSpinWait();
-                continue; // Data not ready, retry
-            }
-
-            // CAS to claim the consumer slot
-            if (consumerIndex.compareAndSet(cIndex, cIndex + 1)) {
-                break; // Slot claimed
-            }
-            // CAS failed, another consumer beat us, retry
+            // else diff > 0: slot not ready yet (another consumer is working on it), retry
         }
 
-        // This is the "release" write, making the slot available to producers.
-        UNSAFE.putObjectVolatile(buffer, offset, null);
+        // We own this slot, read the element
+        element = (T) getElementVolatile(cell);
+        putElementVolatile(cell, null); // Clear for GC
+
+        // Publish by updating sequence
+        putSequenceVolatile(cell, cIndex + capacity);
         return element;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public int drain(Consumer<T> consumer, int limit) {
         int count = 0;
@@ -126,8 +152,11 @@ public final class MPMCArrayQueue<T> extends PaddedProducerIndex implements Conc
         return count;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
-    public int fill(Supplier<T> supplier, int limit) {
+    public int fill(final Supplier<T> supplier, final int limit) {
         int count = 0;
         while (count < limit) {
             if (!offer(supplier.get())) {
@@ -138,26 +167,99 @@ public final class MPMCArrayQueue<T> extends PaddedProducerIndex implements Conc
         return count;
     }
 
+    /**
+     * Returns an <strong>approximate</strong> size of the queue based on
+     * claimed slots. In an MPMC context:
+     * <ul>
+     *   <li>This value may be stale immediately after reading</li>
+     *   <li>The actual number of retrievable elements may differ due to
+     *       in-flight operations by other threads</li>
+     *   <li>Use only for monitoring, debugging, or non-critical decisions</li>
+     * </ul>
+     *
+     * <p>For critical logic, use {@link #poll()} directly rather than
+     * checking size first.</p>
+     *
+     * @return approximate number of elements, clamped to [0, capacity]
+     */
     @Override
     public int size() {
-        return (int) (get() - consumerIndex.get());
+        final long prod = UNSAFE.getLongVolatile(this, P_INDEX_OFFSET);
+        final long cons = UNSAFE.getLongVolatile(this, C_INDEX_OFFSET);
+
+        // Handle overflow: use long arithmetic, then clamp
+        final long size = prod - cons;
+
+        // Clamp to valid range [0, capacity]
+        if (size < 0) {
+            return 0;
+        }
+        if (size > capacity) {
+            return capacity;
+        }
+        return (int) size;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public int capacity() {
         return capacity;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public boolean isEmpty() {
-        return get() == consumerIndex.get();
+        return UNSAFE.getLongVolatile(this, P_INDEX_OFFSET) == UNSAFE.getLongVolatile(this, C_INDEX_OFFSET);
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void clear() {
-        // Not thread-safe!
-        Arrays.fill(buffer, null);
-        set(0L);
-        consumerIndex.set(0L);
+        // Not thread-safe - should only be called when no other threads are accessing
+        for (Cell cell : buffer) {
+            cell.element = null;
+        }
+        UNSAFE.putLongVolatile(this, P_INDEX_OFFSET, 0L);
+        UNSAFE.putLongVolatile(this, C_INDEX_OFFSET, 0L);
+
+        // Reset sequences
+        for (int i = 0; i < capacity; i++) {
+            buffer[i].sequence = i;
+        }
+    }
+
+    // Helper methods using Unsafe for volatile access to Cell fields
+    private static final long SEQUENCE_OFFSET;
+    private static final long ELEMENT_OFFSET;
+
+    static {
+        try {
+            SEQUENCE_OFFSET = UNSAFE.objectFieldOffset(Cell.class.getDeclaredField("sequence"));
+            ELEMENT_OFFSET = UNSAFE.objectFieldOffset(Cell.class.getDeclaredField("element"));
+        } catch (Exception e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+    private static long getSequenceVolatile(Cell cell) {
+        return UNSAFE.getLongVolatile(cell, SEQUENCE_OFFSET);
+    }
+
+    private static void putSequenceVolatile(Cell cell, long value) {
+        UNSAFE.putLongVolatile(cell, SEQUENCE_OFFSET, value);
+    }
+
+    private static Object getElementVolatile(Cell cell) {
+        return UNSAFE.getObjectVolatile(cell, ELEMENT_OFFSET);
+    }
+
+    private static void putElementVolatile(Cell cell, Object value) {
+        UNSAFE.putObjectVolatile(cell, ELEMENT_OFFSET, value);
     }
 }

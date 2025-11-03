@@ -17,7 +17,7 @@ public interface ConcurrentArrayQueue<T> {
      * @param element the element to add
      * @return {@code true} if the element was added, {@code false} if the queue is full
      */
-    boolean offer(T element);
+    boolean offer(final T element);
 
     /**
      * Retrieves and removes the head of this queue.
@@ -34,7 +34,7 @@ public interface ConcurrentArrayQueue<T> {
      * @param limit    the maximum number of elements to drain
      * @return the number of elements drained
      */
-    int drain(Consumer<T> consumer, int limit);
+    int drain(final Consumer<T> consumer, final int limit);
 
     /**
      * Drains all available elements from this queue to the consumer.
@@ -42,7 +42,7 @@ public interface ConcurrentArrayQueue<T> {
      * @param consumer the consumer to accept drained elements
      * @return the number of elements drained
      */
-    default int drain(Consumer<T> consumer) {
+    default int drain(final Consumer<T> consumer) {
         return drain(consumer, Integer.MAX_VALUE);
     }
 
@@ -54,7 +54,7 @@ public interface ConcurrentArrayQueue<T> {
      * @param limit    the maximum number of elements to add
      * @return the number of elements successfully added
      */
-    int fill(Supplier<T> supplier, int limit);
+    int fill(final Supplier<T> supplier, final int limit);
 
     /**
      * Returns the number of elements in this queue.
