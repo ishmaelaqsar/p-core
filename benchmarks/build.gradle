@@ -22,6 +22,7 @@ tasks.named('compileJava') {
 
 jmh {
     verbosity = 'NORMAL' // Available modes are: [SILENT, NORMAL, EXTRA]
+    //includes = ['StringBenchmarks']
 }
 
 // Optional: configure the JAR task
