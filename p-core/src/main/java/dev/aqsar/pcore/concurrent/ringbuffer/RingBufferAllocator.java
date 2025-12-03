@@ -1,5 +1,6 @@
 package dev.aqsar.pcore.concurrent.ringbuffer;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.Buffer;
@@ -38,7 +39,7 @@ public final class RingBufferAllocator {
      * @return a new {@link ByteBuffer} with native byte order and total capacity = dataSize + {@link RingBuffer#METADATA_SIZE}
      * @throws IllegalArgumentException if dataSize is invalid or system cannot align
      */
-    public static ByteBuffer allocate(int dataSize) {
+    public static ByteBuffer allocate(final int dataSize) {
         return allocateAligned(dataSize, DEFAULT_ALIGNMENT);
     }
 
@@ -49,7 +50,7 @@ public final class RingBufferAllocator {
      * @param alignment alignment boundary (must be power-of-two, typically 64).
      * @return a new aligned direct buffer.
      */
-    public static ByteBuffer allocateAligned(int dataSize, int alignment) {
+    public static ByteBuffer allocateAligned(final int dataSize, final int alignment) {
         if (!isPowerOfTwo(dataSize)) {
             throw new IllegalArgumentException("dataSize must be a power of two: " + dataSize);
         }
@@ -63,12 +64,12 @@ public final class RingBufferAllocator {
         final int requiredCapacity = dataSize + RingBuffer.METADATA_SIZE;
         final int totalToAllocate = requiredCapacity + alignment;
 
-        ByteBuffer raw = ByteBuffer.allocateDirect(totalToAllocate).order(ByteOrder.nativeOrder());
+        final ByteBuffer raw = ByteBuffer.allocateDirect(totalToAllocate).order(ByteOrder.nativeOrder());
 
         // Align the buffer start to the desired boundary
-        long address = addressOf(raw);
-        int misalignment = (int) (address & (alignment - 1));
-        int padding = misalignment == 0 ? 0 : alignment - misalignment;
+        final long address = addressOf(raw);
+        final int misalignment = (int) (address & (alignment - 1));
+        final int padding = misalignment == 0 ? 0 : alignment - misalignment;
 
         // Set position and limit to create a slice of the *exact* required capacity
         raw.position(padding);
@@ -81,10 +82,10 @@ public final class RingBufferAllocator {
      * Retrieves the native memory address of a direct buffer.
      * This is private as it's only needed for alignment calculation.
      */
-    private static long addressOf(ByteBuffer direct) {
+    private static long addressOf(final ByteBuffer direct) {
         try {
             // Use java.nio.Buffer to access the 'address' field
-            var field = Buffer.class.getDeclaredField("address");
+            final Field field = Buffer.class.getDeclaredField("address");
             field.setAccessible(true);
             return field.getLong(direct);
         } catch (Exception e) {
