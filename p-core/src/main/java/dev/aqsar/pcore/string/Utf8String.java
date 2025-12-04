@@ -1,5 +1,7 @@
 package dev.aqsar.pcore.string;
 
+import dev.aqsar.pcore.concurrent.ReadableBuffer;
+
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.reflect.Field;
@@ -11,8 +13,7 @@ import java.util.Arrays;
  */
 @NotThreadSafe
 @SuppressWarnings("restriction")
-public final class Utf8String implements MutableString {
-
+public final class Utf8String extends AbstractMutableString {
     private static final sun.misc.Unsafe UNSAFE;
     private static final long BYTE_ARRAY_OFFSET;
 
@@ -155,9 +156,9 @@ public final class Utf8String implements MutableString {
         } else {
             value = i;
         }
-        final int len = MutableString.stringSize(value);
+        final int len = stringSize(value);
         ensureCapacity(byteLength + len);
-        MutableString.getChars(value, byteLength + len, buffer);
+        getChars(value, byteLength + len, buffer);
         byteLength += len;
         charLength += len;
         hash = 0;
@@ -178,9 +179,9 @@ public final class Utf8String implements MutableString {
         } else {
             value = l;
         }
-        final int len = MutableString.stringSize(value);
+        final int len = stringSize(value);
         ensureCapacity(byteLength + len);
-        MutableString.getChars(value, byteLength + len, buffer);
+        getChars(value, byteLength + len, buffer);
         byteLength += len;
         charLength += len;
         hash = 0;
@@ -212,9 +213,9 @@ public final class Utf8String implements MutableString {
         } else {
             value = f;
         }
-        final int len = MutableString.stringSize(value, precision);
+        final int len = stringSize(value, precision);
         ensureCapacity(byteLength + len);
-        MutableString.getChars(value, byteLength + len, precision, buffer);
+        getChars(value, byteLength + len, precision, buffer);
         byteLength += len;
         charLength += len;
         hash = 0;
@@ -246,9 +247,9 @@ public final class Utf8String implements MutableString {
         } else {
             value = d;
         }
-        final int len = MutableString.stringSize(value, precision);
+        final int len = stringSize(value, precision);
         ensureCapacity(byteLength + len);
-        MutableString.getChars(value, byteLength + len, precision, buffer);
+        getChars(value, byteLength + len, precision, buffer);
         byteLength += len;
         charLength += len;
         hash = 0;
@@ -350,6 +351,15 @@ public final class Utf8String implements MutableString {
         clear();
         append(cs);
         return this;
+    }
+
+    @Override
+    public void copyFrom(final ReadableBuffer src, final int index, final int length) {
+        ensureCapacity(length);
+        src.getBytes(index, this.buffer, 0, length);
+        this.byteLength = length;
+        recalculateCharLength(length);
+        this.hash = 0;
     }
 
     @Override
@@ -499,7 +509,8 @@ public final class Utf8String implements MutableString {
             } else if ((b & 0xF8) == 0xF0) {
                 charLen = 2;
                 seqLen = 4;
-                codePoint = ((b & 0x07) << 18) | ((buffer[i + 1] & 0x3F) << 12) | ((buffer[i + 2] & 0x3F) << 6) | (buffer[i + 3] & 0x3F);
+                codePoint = ((b & 0x07) << 18) | ((buffer[i + 1] & 0x3F) << 12) | ((buffer[i + 2] & 0x3F) << 6) |
+                            (buffer[i + 3] & 0x3F);
             } else {
                 continue; // Skip invalid
             }

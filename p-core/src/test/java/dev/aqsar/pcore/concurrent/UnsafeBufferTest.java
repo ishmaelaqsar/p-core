@@ -1,5 +1,7 @@
 package dev.aqsar.pcore.concurrent;
 
+import dev.aqsar.pcore.string.AsciiString;
+import dev.aqsar.pcore.string.Utf8String;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -188,6 +190,66 @@ class UnsafeBufferTest {
         int len16 = unsafeBuffer.putString(200, s, StandardCharsets.UTF_16BE);
         String result16 = unsafeBuffer.getString(200, len16, StandardCharsets.UTF_16BE);
         assertEquals(s, result16);
+    }
+
+    @Test
+    void testMutableStringIntegration() {
+        // 1. Test Writing Utf8String -> Buffer
+        Utf8String utf8Src = new Utf8String();
+        utf8Src.append("Hello €uro!"); // '€' is 3 bytes
+
+        int written = unsafeBuffer.putString(0, utf8Src);
+
+        // "Hello " (6) + "€" (3) + "uro!" (4) = 13 bytes
+        assertEquals(13, written);
+        assertEquals(13, utf8Src.getByteLength());
+
+        // Verify content in buffer manually
+        byte[] bufferContent = new byte[13];
+        unsafeBuffer.getBytes(0, bufferContent, 0, 13);
+        byte[] expectedBytes = Arrays.copyOf(utf8Src.getRawBytes(), utf8Src.getByteLength());
+        assertArrayEquals(expectedBytes, bufferContent);
+
+        // 2. Test Reading Buffer -> Utf8String (Overwrite/CopyFrom)
+        Utf8String utf8Dst = new Utf8String();
+        unsafeBuffer.getString(0, written, utf8Dst);
+
+        assertEquals("Hello €uro!", utf8Dst.toString());
+        assertEquals(13, utf8Dst.getByteLength());
+        assertEquals(11, utf8Dst.length()); // 11 Chars
+
+        // 3. Test Writing AsciiString -> Buffer
+        AsciiString asciiSrc = new AsciiString();
+        asciiSrc.append("ASCII Data");
+
+        int writtenAscii = unsafeBuffer.putString(50, asciiSrc);
+        assertEquals(10, writtenAscii);
+
+        // 4. Test Reading Buffer -> AsciiString
+        AsciiString asciiDst = new AsciiString();
+        unsafeBuffer.getString(50, writtenAscii, asciiDst);
+
+        assertEquals("ASCII Data", asciiDst.toString());
+        assertEquals(10, asciiDst.length());
+    }
+
+    @Test
+    void testMutableStringStateRecalculation() {
+        // This explicitly tests that Utf8String recalculates its char count
+        // when read from the buffer via copyFrom.
+
+        // Manually write UTF-8 bytes for "A€" (A = 0x41, € = 0xE2 0x82 0xAC)
+        unsafeBuffer.putByte(0, (byte) 0x41);
+        unsafeBuffer.putByte(1, (byte) 0xE2);
+        unsafeBuffer.putByte(2, (byte) 0x82);
+        unsafeBuffer.putByte(3, (byte) 0xAC);
+
+        Utf8String dst = new Utf8String();
+        unsafeBuffer.getString(0, 4, dst);
+
+        assertEquals("A€", dst.toString());
+        assertEquals(4, dst.getByteLength());
+        assertEquals(2, dst.length()); // Recalculated correctly as 2 chars
     }
 
     @Test

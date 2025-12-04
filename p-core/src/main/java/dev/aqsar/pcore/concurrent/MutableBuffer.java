@@ -1,5 +1,7 @@
 package dev.aqsar.pcore.concurrent;
 
+import dev.aqsar.pcore.string.MutableString;
+
 import java.nio.charset.Charset;
 
 /**
@@ -9,14 +11,13 @@ import java.nio.charset.Charset;
  * native byte order.
  */
 public interface MutableBuffer {
-
     /**
      * Writes a byte to the given index.
      *
      * @param index index relative to the start of this buffer view
      * @param value the byte to write
      */
-    void putByte(int index, byte value);
+    void putByte(final int index, final byte value);
 
     /**
      * Writes a short to the given index (in native byte order).
@@ -24,7 +25,7 @@ public interface MutableBuffer {
      * @param index index relative to the start of this buffer view
      * @param value the short to write
      */
-    void putShort(int index, short value);
+    void putShort(final int index, final short value);
 
     /**
      * Writes a char to the given index (in native byte order).
@@ -32,7 +33,7 @@ public interface MutableBuffer {
      * @param index index relative to the start of this buffer view
      * @param value the char to write
      */
-    void putChar(int index, char value);
+    void putChar(final int index, final char value);
 
     /**
      * Writes an int to the given index (in native byte order).
@@ -40,7 +41,7 @@ public interface MutableBuffer {
      * @param index index relative to the start of this buffer view
      * @param value the int to write
      */
-    void putInt(int index, int value);
+    void putInt(final int index, final int value);
 
     /**
      * Writes a float to the given index (in native byte order).
@@ -48,7 +49,7 @@ public interface MutableBuffer {
      * @param index index relative to the start of this buffer view
      * @param value the float to write
      */
-    void putFloat(int index, float value);
+    void putFloat(final int index, final float value);
 
     /**
      * Writes a long to the given index (in native byte order).
@@ -56,7 +57,7 @@ public interface MutableBuffer {
      * @param index index relative to the start of this buffer view
      * @param value the long to write
      */
-    void putLong(int index, long value);
+    void putLong(final int index, final long value);
 
     /**
      * Writes a double to the given index (in native byte order).
@@ -64,7 +65,7 @@ public interface MutableBuffer {
      * @param index index relative to the start of this buffer view
      * @param value the double to write
      */
-    void putDouble(int index, double value);
+    void putDouble(final int index, final double value);
 
     /**
      * Bulk copies bytes from a source byte array into this buffer.
@@ -74,7 +75,7 @@ public interface MutableBuffer {
      * @param srcOffset the source offset in the byte array
      * @param length    the number of bytes to copy
      */
-    void putBytes(int index, byte[] src, int srcOffset, int length);
+    void putBytes(final int index, final byte[] src, final int srcOffset, final int length);
 
     /**
      * Encodes and writes an ASCII string.
@@ -85,7 +86,7 @@ public interface MutableBuffer {
      * @param value the String to write
      * @return the number of bytes written
      */
-    int putStringAscii(int index, String value);
+    int putStringAscii(final int index, final String value);
 
     /**
      * Encodes and writes a string using the specified charset.
@@ -97,5 +98,14 @@ public interface MutableBuffer {
      * @param charset the charset to use for encoding
      * @return the number of bytes written
      */
-    int putString(int index, String value, Charset charset);
+    int putString(final int index, final String value, final Charset charset);
+
+    /**
+     * Encodes and writes a mutable string without allocations.
+     *
+     * @param index the destination index in this buffer
+     * @param value the MutableString to write
+     * @return the number of bytes written
+     */
+    int putString(final int index, final MutableString value);
 }

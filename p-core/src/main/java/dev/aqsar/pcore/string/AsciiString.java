@@ -1,5 +1,7 @@
 package dev.aqsar.pcore.string;
 
+import dev.aqsar.pcore.concurrent.ReadableBuffer;
+
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.reflect.Field;
@@ -11,8 +13,7 @@ import java.util.Arrays;
  */
 @NotThreadSafe
 @SuppressWarnings("restriction")
-public final class AsciiString implements MutableString {
-
+public final class AsciiString extends AbstractMutableString {
     private static final sun.misc.Unsafe UNSAFE;
     private static final long BYTE_ARRAY_OFFSET;
 
@@ -206,6 +207,14 @@ public final class AsciiString implements MutableString {
         return this;
     }
 
+    @Override
+    public void copyFrom(final ReadableBuffer src, final int index, final int length) {
+        ensureCapacity(length);
+        src.getBytes(index, this.buffer, 0, length);
+        this.length = length;
+        this.hash = 0;
+    }
+
     private MutableString appendBytes(final byte[] src) {
         ensureCapacity(length + src.length);
         UNSAFE.copyMemory(src, BYTE_ARRAY_OFFSET, buffer, BYTE_ARRAY_OFFSET + length, src.length);
@@ -227,9 +236,9 @@ public final class AsciiString implements MutableString {
         } else {
             value = i;
         }
-        final int size = MutableString.stringSize(value);
+        final int size = stringSize(value);
         ensureCapacity(length + size);
-        MutableString.getChars(value, length + size, buffer);
+        getChars(value, length + size, buffer);
         length += size;
         hash = 0;
         return this;
@@ -248,9 +257,9 @@ public final class AsciiString implements MutableString {
         } else {
             value = l;
         }
-        final int size = MutableString.stringSize(value);
+        final int size = stringSize(value);
         ensureCapacity(length + size);
-        MutableString.getChars(value, length + size, buffer);
+        getChars(value, length + size, buffer);
         length += size;
         hash = 0;
         return this;
@@ -280,9 +289,9 @@ public final class AsciiString implements MutableString {
         } else {
             value = f;
         }
-        final int size = MutableString.stringSize(value, precision);
+        final int size = stringSize(value, precision);
         ensureCapacity(length + size);
-        MutableString.getChars(value, length + size, precision, buffer);
+        getChars(value, length + size, precision, buffer);
         length += size;
         hash = 0;
         return this;
@@ -312,9 +321,9 @@ public final class AsciiString implements MutableString {
         } else {
             value = d;
         }
-        final int size = MutableString.stringSize(value, precision);
+        final int size = stringSize(value, precision);
         ensureCapacity(length + size);
-        MutableString.getChars(value, length + size, precision, buffer);
+        getChars(value, length + size, precision, buffer);
         length += size;
         hash = 0;
         return this;

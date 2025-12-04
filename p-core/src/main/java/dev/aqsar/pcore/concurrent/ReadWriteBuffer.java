@@ -14,5 +14,5 @@ public interface ReadWriteBuffer extends ReadableBuffer, MutableBuffer {
      * @param length  the length of the region in bytes
      * @return this instance
      */
-    ReadWriteBuffer wrap(long address, int length);
+    ReadWriteBuffer wrap(final long address, final int length);
 }

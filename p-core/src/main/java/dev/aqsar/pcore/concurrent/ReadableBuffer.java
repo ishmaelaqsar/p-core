@@ -1,5 +1,9 @@
 package dev.aqsar.pcore.concurrent;
 
+import dev.aqsar.pcore.string.MutableString;
+
+import java.nio.charset.Charset;
+
 /**
  * A safe, read-only view of a region of off-heap memory.
  * This interface provides a way to read data without exposing
@@ -9,7 +13,6 @@ package dev.aqsar.pcore.concurrent;
  * native byte order.
  */
 public interface ReadableBuffer {
-
     /**
      * @return The length of this buffer view in bytes.
      */
@@ -21,7 +24,7 @@ public interface ReadableBuffer {
      * @param index index relative to the start of this buffer view (0 to length-1)
      * @return the byte at the index
      */
-    byte getByte(int index);
+    byte getByte(final int index);
 
     /**
      * Reads a short from the given index (in native byte order).
@@ -29,7 +32,7 @@ public interface ReadableBuffer {
      * @param index index relative to the start of this buffer view (0 to length-2)
      * @return the short at the index
      */
-    short getShort(int index);
+    short getShort(final int index);
 
     /**
      * Reads a char from the given index (in native byte order).
@@ -37,7 +40,7 @@ public interface ReadableBuffer {
      * @param index index relative to the start of this buffer view (0 to length-2)
      * @return the char at the index
      */
-    char getChar(int index);
+    char getChar(final int index);
 
     /**
      * Reads an int from the given index (in native byte order).
@@ -45,7 +48,7 @@ public interface ReadableBuffer {
      * @param index index relative to the start of this buffer view (0 to length-4)
      * @return the int at the index
      */
-    int getInt(int index);
+    int getInt(final int index);
 
     /**
      * Reads a float from the given index (in native byte order).
@@ -53,7 +56,7 @@ public interface ReadableBuffer {
      * @param index index relative to the start of this buffer view (0 to length-4)
      * @return the float at the index
      */
-    float getFloat(int index);
+    float getFloat(final int index);
 
     /**
      * Reads a long from the given index (in native byte order).
@@ -61,7 +64,7 @@ public interface ReadableBuffer {
      * @param index index relative to the start of this buffer view (0 to length-8)
      * @return the long at the index
      */
-    long getLong(int index);
+    long getLong(final int index);
 
     /**
      * Reads a double from the given index (in native byte order).
@@ -69,7 +72,7 @@ public interface ReadableBuffer {
      * @param index index relative to the start of this buffer view (0 to length-8)
      * @return the double at the index
      */
-    double getDouble(int index);
+    double getDouble(final int index);
 
     /**
      * Bulk copies bytes from this buffer into a destination byte array.
@@ -79,7 +82,7 @@ public interface ReadableBuffer {
      * @param dstOffset the destination offset in the byte array
      * @param length    the number of bytes to copy
      */
-    void getBytes(int index, byte[] dst, int dstOffset, int length);
+    void getBytes(final int index, final byte[] dst, final int dstOffset, final int length);
 
     /**
      * Decodes and heap-allocates an ASCII string.
@@ -90,7 +93,7 @@ public interface ReadableBuffer {
      * @param length the number of bytes (chars) to read
      * @return a new String
      */
-    String getStringAscii(int index, int length);
+    String getStringAscii(final int index, final int length);
 
     /**
      * Decodes and heap-allocates a string using the specified charset.
@@ -102,5 +105,14 @@ public interface ReadableBuffer {
      * @param charset the charset to use for decoding
      * @return a new String
      */
-    String getString(int index, int length, java.nio.charset.Charset charset);
+    String getString(final int index, final int length, final Charset charset);
+
+    /**
+     * Decodes a string without allocations.
+     *
+     * @param index  the source index in this buffer
+     * @param length the number of bytes to read
+     * @param dst    the MutableString to write to
+     */
+    void getString(final int index, final int length, final MutableString dst);
 }

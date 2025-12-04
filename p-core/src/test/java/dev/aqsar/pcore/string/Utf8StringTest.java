@@ -1,18 +1,34 @@
 package dev.aqsar.pcore.string;
 
+import dev.aqsar.pcore.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import sun.misc.Unsafe;
+
+import java.lang.reflect.Field;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class Utf8StringTest {
-
     private Utf8String s;
-    private static final String REPLACEMENT_CHAR = "\uFFFD";
+    private UnsafeBuffer testBuffer;
+    private ByteBuffer directMem;
 
     @BeforeEach
-    void setup() {
+    void setup() throws NoSuchFieldException, IllegalAccessException {
         s = new Utf8String(16);
+
+        // Setup a small buffer for testing copyFrom
+        Field f = Unsafe.class.getDeclaredField("theUnsafe");
+        f.setAccessible(true);
+        Unsafe unsafe = (Unsafe) f.get(null);
+        directMem = ByteBuffer.allocateDirect(128).order(ByteOrder.nativeOrder());
+        long addr = unsafe.getLong(directMem, unsafe.objectFieldOffset(Buffer.class.getDeclaredField("address")));
+        testBuffer = new UnsafeBuffer();
+        testBuffer.wrap(addr, 128);
     }
 
     @Test
@@ -241,6 +257,31 @@ class Utf8StringTest {
         other.append("Utf8Source");
         s.copyOf(other);
         assertEquals("Utf8Source", s.toString());
+    }
+
+    @Test
+    void testCopyFrom() {
+        // 1. Prepare buffer with "Test€" (Test = 4 bytes, € = 3 bytes -> Total 7)
+        String input = "Test€";
+        testBuffer.putString(0, input, java.nio.charset.StandardCharsets.UTF_8);
+        // 2. Perform copyFrom
+        s.append("GarbageDataToOverwrite");
+        s.copyFrom(testBuffer, 0, 7);
+        // 3. Verify
+        assertEquals("Test€", s.toString());
+        assertEquals(7, s.getByteLength());
+        assertEquals(5, s.length()); // 4 chars + 1 char
+    }
+
+    @Test
+    void testCopyFromResize() {
+        // 1. Prepare large data
+        String large = "A".repeat(100);
+        testBuffer.putStringAscii(0, large);
+        // 2. s is init with 16, this should force resize
+        s.copyFrom(testBuffer, 0, 100);
+        assertEquals(large, s.toString());
+        assertEquals(100, s.getByteLength());
     }
 
     @Test

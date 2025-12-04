@@ -1,17 +1,33 @@
 package dev.aqsar.pcore.string;
 
+import dev.aqsar.pcore.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import sun.misc.Unsafe;
+
+import java.lang.reflect.Field;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AsciiStringTest {
-
     private AsciiString s;
+    private UnsafeBuffer testBuffer;
+    private ByteBuffer directMem;
 
     @BeforeEach
-    void setup() {
+    void setup() throws NoSuchFieldException, IllegalAccessException {
         s = new AsciiString(16);
+        // Setup buffer
+        Field f = Unsafe.class.getDeclaredField("theUnsafe");
+        f.setAccessible(true);
+        Unsafe unsafe = (Unsafe) f.get(null);
+        directMem = ByteBuffer.allocateDirect(128).order(ByteOrder.nativeOrder());
+        long addr = unsafe.getLong(directMem, unsafe.objectFieldOffset(Buffer.class.getDeclaredField("address")));
+        testBuffer = new UnsafeBuffer();
+        testBuffer.wrap(addr, 128);
     }
 
     @Test
@@ -150,6 +166,15 @@ class AsciiStringTest {
         other.append("other");
         s.copyOf(other);
         assertEquals("other", s.toString());
+    }
+
+    @Test
+    void testCopyFrom() {
+        testBuffer.putStringAscii(0, "Hello");
+        s.append("OldData");
+        s.copyFrom(testBuffer, 0, 5);
+        assertEquals("Hello", s.toString());
+        assertEquals(5, s.length());
     }
 
     @Test
