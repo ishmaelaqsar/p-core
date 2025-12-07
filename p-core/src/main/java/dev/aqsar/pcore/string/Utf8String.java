@@ -367,6 +367,11 @@ public final class Utf8String extends AbstractMutableString {
         return byteLength;
     }
 
+    @Override
+    public ImmutableView toImmutableView() {
+        return new ImmutableView(this);
+    }
+
     private MutableString appendBytes(final byte[] src) {
         ensureCapacity(byteLength + src.length);
         UNSAFE.copyMemory(src, BYTE_ARRAY_OFFSET, buffer, BYTE_ARRAY_OFFSET + byteLength, src.length);

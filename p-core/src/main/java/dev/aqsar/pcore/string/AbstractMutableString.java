@@ -2,26 +2,26 @@ package dev.aqsar.pcore.string;
 
 import java.nio.charset.StandardCharsets;
 
-abstract class AbstractMutableString implements MutableString {
+abstract class AbstractMutableString implements MutableString, Comparable<AbstractMutableString> {
     protected static final long[] POWERS_OF_TEN = {1L,
-                                                 10L,
-                                                 100L,
-                                                 1000L,
-                                                 10000L,
-                                                 100000L,
-                                                 1000000L,
-                                                 10000000L,
-                                                 100000000L,
-                                                 1000000000L,
-                                                 10000000000L,
-                                                 100000000000L,
-                                                 1000000000000L,
-                                                 10000000000000L,
-                                                 100000000000000L,
-                                                 1000000000000000L,
-                                                 10000000000000000L,
-                                                 100000000000000000L,
-                                                 1000000000000000000L};
+                                                   10L,
+                                                   100L,
+                                                   1000L,
+                                                   10000L,
+                                                   100000L,
+                                                   1000000L,
+                                                   10000000L,
+                                                   100000000L,
+                                                   1000000000L,
+                                                   10000000000L,
+                                                   100000000000L,
+                                                   1000000000000L,
+                                                   10000000000000L,
+                                                   100000000000000L,
+                                                   1000000000000000L,
+                                                   10000000000000000L,
+                                                   100000000000000000L,
+                                                   1000000000000000000L};
     protected final int DEFAULT_PRECISION = 5;
     protected final byte[] TRUE_BYTES = "true".getBytes(StandardCharsets.US_ASCII);
     protected final byte[] FALSE_BYTES = "false".getBytes(StandardCharsets.US_ASCII);
@@ -133,4 +133,27 @@ abstract class AbstractMutableString implements MutableString {
 
     @Override
     public abstract String toString();
+
+    protected abstract byte[] getRawBytes();
+
+    @Override
+    public int compareTo(final AbstractMutableString o) {
+        if (this == o) {
+            return 0;
+        }
+        final int len1 = this.getByteLength();
+        final int len2 = o.getByteLength();
+        final int lim = Math.min(len1, len2);
+        final byte[] v1 = this.getRawBytes();
+        final byte[] v2 = o.getRawBytes();
+        for (int k = 0; k < lim; k++) {
+            // MUST compare as unsigned bytes for UTF-8 sorting to work correctly
+            final int b1 = v1[k] & 0xFF;
+            final int b2 = v2[k] & 0xFF;
+            if (b1 != b2) {
+                return b1 - b2;
+            }
+        }
+        return len1 - len2;
+    }
 }

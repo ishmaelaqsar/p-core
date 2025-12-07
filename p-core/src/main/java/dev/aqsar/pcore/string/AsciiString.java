@@ -351,4 +351,9 @@ public final class AsciiString extends AbstractMutableString {
     public int getByteLength() {
         return length;
     }
+
+    @Override
+    public ImmutableView toImmutableView() {
+        return new ImmutableView(this);
+    }
 }

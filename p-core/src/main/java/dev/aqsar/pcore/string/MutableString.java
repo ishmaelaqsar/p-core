@@ -34,4 +34,6 @@ public interface MutableString extends CharSequence {
     void copyFrom(final ReadableBuffer src, final int index, final int length);
 
     int getByteLength();
+
+    ImmutableView toImmutableView();
 }
