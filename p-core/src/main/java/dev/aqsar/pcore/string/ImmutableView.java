@@ -1,14 +1,16 @@
 package dev.aqsar.pcore.string;
 
+import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Objects;
 
 /**
  * A read-only view of a MutableString.
  * <p>
  * Note: This view is "live". If the underlying MutableString is modified,
- * this view will reflect those changes. It is NOT thread-safe.
+ * this view will reflect those changes.
  * </p>
  */
+@NotThreadSafe
 public final class ImmutableView implements CharSequence, Comparable<ImmutableView> {
 
     private final AbstractMutableString mutableString;

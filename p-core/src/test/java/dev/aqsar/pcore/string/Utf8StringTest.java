@@ -294,4 +294,38 @@ class Utf8StringTest {
         s2.append("!");
         assertNotEquals(s, s2);
     }
+
+    @Test
+    void testCompareTo() {
+        s.append("b");
+
+        // ASCII String
+        AsciiString s2 = new AsciiString();
+
+        s2.copyOf("b");
+        assertEquals(0, s.compareTo(s2));
+
+        s2.copyOf("c");
+        assertTrue(s.compareTo(s2) < 0);
+
+        s2.copyOf("a");
+        assertTrue(s.compareTo(s2) > 0);
+
+        // UTF8 String
+        Utf8String u1 = new Utf8String();
+
+        u1.copyOf("b");
+        assertEquals(0, s.compareTo(u1));
+
+        u1.copyOf("c");
+        assertTrue(s.compareTo(u1) < 0);
+
+        u1.copyOf("a");
+        assertTrue(s.compareTo(u1) > 0);
+
+        // Java String
+        assertEquals(0, s.compareTo("b"));
+        assertTrue(s.compareTo("c") < 0);
+        assertTrue(s.compareTo("a") > 0);
+    }
 }

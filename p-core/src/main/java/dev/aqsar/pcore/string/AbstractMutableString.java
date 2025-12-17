@@ -2,7 +2,7 @@ package dev.aqsar.pcore.string;
 
 import java.nio.charset.StandardCharsets;
 
-abstract class AbstractMutableString implements MutableString, Comparable<AbstractMutableString> {
+abstract class AbstractMutableString implements MutableString, Comparable<CharSequence> {
     protected static final long[] POWERS_OF_TEN = {1L,
                                                    10L,
                                                    100L,
@@ -136,7 +136,6 @@ abstract class AbstractMutableString implements MutableString, Comparable<Abstra
 
     protected abstract byte[] getRawBytes();
 
-    @Override
     public int compareTo(final AbstractMutableString o) {
         if (this == o) {
             return 0;
@@ -152,6 +151,24 @@ abstract class AbstractMutableString implements MutableString, Comparable<Abstra
             final int b2 = v2[k] & 0xFF;
             if (b1 != b2) {
                 return b1 - b2;
+            }
+        }
+        return len1 - len2;
+    }
+
+    @Override
+    public int compareTo(final CharSequence other) {
+        if (other instanceof final AbstractMutableString a) {
+            return compareTo(a);
+        }
+        final int len1 = this.length();
+        final int len2 = other.length();
+        final int lim = Math.min(len1, len2);
+        for (int k = 0; k < lim; k++) {
+            final char c1 = this.charAt(k);
+            final char c2 = other.charAt(k);
+            if (c1 != c2) {
+                return c1 - c2;
             }
         }
         return len1 - len2;

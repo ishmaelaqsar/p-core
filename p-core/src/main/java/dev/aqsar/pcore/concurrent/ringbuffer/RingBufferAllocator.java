@@ -1,9 +1,11 @@
 package dev.aqsar.pcore.concurrent.ringbuffer;
 
+import dev.aqsar.pcore.number.NumberUtil;
+
 import java.lang.reflect.Field;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.Buffer;
 
 /**
  * Utility class for allocating correctly sized and cache-aligned
@@ -51,30 +53,25 @@ public final class RingBufferAllocator {
      * @return a new aligned direct buffer.
      */
     public static ByteBuffer allocateAligned(final int dataSize, final int alignment) {
-        if (!isPowerOfTwo(dataSize)) {
+        if (!NumberUtil.isPowerOfTwo(dataSize)) {
             throw new IllegalArgumentException("dataSize must be a power of two: " + dataSize);
         }
         if (dataSize < RingBuffer.MIN_SIZE) {
             throw new IllegalArgumentException("dataSize too small: " + dataSize);
         }
-        if (!isPowerOfTwo(alignment) || alignment < 8) {
+        if (!NumberUtil.isPowerOfTwo(alignment) || alignment < 8) {
             throw new IllegalArgumentException("alignment must be power-of-two and ≥ 8: " + alignment);
         }
-
         final int requiredCapacity = dataSize + RingBuffer.METADATA_SIZE;
         final int totalToAllocate = requiredCapacity + alignment;
-
         final ByteBuffer raw = ByteBuffer.allocateDirect(totalToAllocate).order(ByteOrder.nativeOrder());
-
         // Align the buffer start to the desired boundary
         final long address = addressOf(raw);
         final int misalignment = (int) (address & (alignment - 1));
         final int padding = misalignment == 0 ? 0 : alignment - misalignment;
-
         // Set position and limit to create a slice of the *exact* required capacity
         raw.position(padding);
         raw.limit(padding + requiredCapacity);
-
         return raw.slice().order(ByteOrder.nativeOrder());
     }
 
@@ -91,9 +88,5 @@ public final class RingBufferAllocator {
         } catch (Exception e) {
             throw new RuntimeException("Cannot access direct buffer address", e);
         }
-    }
-
-    private static boolean isPowerOfTwo(int n) {
-        return n > 0 && (n & (n - 1)) == 0;
     }
 }
